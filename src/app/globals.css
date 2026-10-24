@@ -64,6 +64,7 @@ body {
 
 .field {
   width: 100%;
+  height: 2.875rem;
   border: 1px solid var(--color-line);
   background: white;
   border-radius: var(--radius-field);
@@ -72,13 +73,18 @@ body {
   color: var(--color-ink);
 }
 .field:focus { outline: none; border-color: var(--color-wall); box-shadow: 0 0 0 3px rgba(63, 91, 71, 0.18); }
+textarea.field { height: auto; }
+select.field { padding-right: 2rem; }
+.field-sm { height: 2.25rem; padding: 0.35rem 0.7rem; font-size: 0.875rem; }
 .label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--color-ink-2); margin-bottom: 0.35rem; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-  border-radius: 999px; padding: 0.75rem 1.35rem; font-weight: 600; font-size: 0.95rem;
+  min-height: 2.875rem; border-radius: 999px; padding: 0.6rem 1.35rem; font-weight: 600; font-size: 0.95rem;
+  line-height: 1.2; text-align: center; white-space: nowrap;
   transition: background-color 120ms ease, transform 120ms ease;
 }
+.btn-sm { min-height: 2.25rem; padding: 0.35rem 0.95rem; font-size: 0.875rem; }
 .btn:active { transform: translateY(1px); }
 .btn-primary { background: var(--color-wall-deep); color: var(--color-milk); }
 .btn-primary:hover { background: var(--color-wall); }

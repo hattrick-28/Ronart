@@ -6,6 +6,7 @@ import { eur, shortDate } from "@/lib/format";
 import { CHANNEL_LABEL, METHOD_LABEL, STATUS_LABEL, STATUS_TONE, Pill } from "@/lib/labels";
 import { nightsBetween } from "@/lib/pricing";
 import { Flash } from "@/components/admin/flash";
+import { IdUpload } from "@/components/admin/id-upload";
 import { markRefunded, recordPayment, saveInternalNote, setBlacklist, setBookingStatus } from "../../../actions";
 
 export default async function BookingDetail({ params, searchParams }: {
@@ -28,6 +29,17 @@ export default async function BookingDetail({ params, searchParams }: {
   const staffIds = [...new Set((payments ?? []).map((p) => p.received_by).filter(Boolean))] as string[];
   const { data: staff } = staffIds.length ? await supabase.from("staff").select("user_id, full_name").in("user_id", staffIds) : { data: [] };
   const staffName = (uid: string | null) => staff?.find((s) => s.user_id === uid)?.full_name ?? "";
+  const guestIdForDocs = (b.guests as { id: string } | null)?.id;
+  const { data: docRows } = guestIdForDocs
+    ? await supabase.from("guest_documents").select("id, storage_path, kind, created_at").eq("guest_id", guestIdForDocs).order("created_at", { ascending: false })
+    : { data: [] };
+  const docs = await Promise.all(
+    (docRows ?? []).map(async (d) => {
+      const { data: signed } = await supabase.storage.from("guest-ids").createSignedUrl(d.storage_path, 120);
+      return { ...d, url: signed?.signedUrl ?? null, isPdf: d.storage_path.endsWith(".pdf") };
+    }),
+  );
+  const KIND: Record<string, string> = { id_card: "Letërnjoftim", passport: "Pasaportë", driving_licence: "Patentë", other: "Dokument" };
 
   const g = b.guests as { id: string; full_name: string; email: string | null; phone: string | null; country: string | null; is_blacklisted: boolean; blacklist_reason: string | null; no_show_count: number } | null;
   const u = b.units as { name: string; type: string } | null;
@@ -76,7 +88,7 @@ export default async function BookingDetail({ params, searchParams }: {
                   <form key={a.to} action={setBookingStatus}>
                     <input type="hidden" name="bookingId" value={b.id} />
                     <input type="hidden" name="to" value={a.to} />
-                    <button className={`btn ${a.tone} !py-2`}>{a.label}</button>
+                    <button className={`btn ${a.tone} btn-sm`}>{a.label}</button>
                   </form>
                 ))}
               </div>
@@ -103,7 +115,7 @@ export default async function BookingDetail({ params, searchParams }: {
               {(payments ?? []).length === 0 && <li className="py-2.5 text-ink-3">Asnjë pagesë ende.</li>}
             </ul>
             {due > 0.009 && b.channel !== "airbnb" && !["cancelled", "no_show"].includes(b.status) && (
-              <form action={recordPayment} className="mt-4 pt-4 border-t border-line grid sm:grid-cols-[8rem_1fr_1fr_auto] gap-2 items-end">
+              <form action={recordPayment} className="mt-4 pt-4 border-t border-line grid grid-cols-2 sm:grid-cols-[7rem_11rem_1fr_auto] gap-2 items-end">
                 <input type="hidden" name="bookingId" value={b.id} />
                 <label><span className="label">Shuma (€)</span><input className="field" name="amount" type="number" step="0.01" min="0.01" defaultValue={due.toFixed(2)} required /></label>
                 <label><span className="label">Mënyra</span>
@@ -111,14 +123,14 @@ export default async function BookingDetail({ params, searchParams }: {
                     <option value="cash">Para në dorë</option><option value="card_pos">Kartelë në POS</option><option value="bank_transfer">Transfertë bankare</option>
                   </select>
                 </label>
-                <label><span className="label">Shënim</span><input className="field" name="note" maxLength={300} /></label>
-                <button className="btn btn-primary h-[46px]">Regjistro pagesën</button>
+                <label className="col-span-2 sm:col-span-1"><span className="label">Shënim</span><input className="field" name="note" maxLength={300} /></label>
+                <button className="btn btn-primary col-span-2 sm:col-span-1">Regjistro pagesën</button>
               </form>
             )}
             {b.needs_refund && me.role === "owner" && (
               <form action={markRefunded} className="mt-4">
                 <input type="hidden" name="bookingId" value={b.id} />
-                <button className="btn btn-ghost !py-2">Shëno si të rimbursuar</button>
+                <button className="btn btn-ghost btn-sm">Shëno si të rimbursuar</button>
               </form>
             )}
           </section>
@@ -128,7 +140,7 @@ export default async function BookingDetail({ params, searchParams }: {
             <form action={saveInternalNote} className="mt-3 space-y-2">
               <input type="hidden" name="bookingId" value={b.id} />
               <textarea className="field min-h-24" name="note" defaultValue={b.internal_note ?? ""} maxLength={2000} />
-              <button className="btn btn-ghost !py-2">Ruaj shënimin</button>
+              <button className="btn btn-ghost btn-sm">Ruaj shënimin</button>
             </form>
           </section>
         </div>
@@ -141,6 +153,32 @@ export default async function BookingDetail({ params, searchParams }: {
           {g?.country && <p className="text-ink-2">{g.country}</p>}
           {(g?.no_show_count ?? 0) > 0 && <p className="text-bad">Nuk është paraqitur {g!.no_show_count} herë më parë.</p>}
           {g && (
+            <div className="pt-3 border-t border-line space-y-3">
+              <p className="font-semibold">Dokumenti i identifikimit</p>
+              {docs.length > 0 && (
+                <ul className="grid grid-cols-2 gap-2">
+                  {docs.map((d) => (
+                    <li key={d.id}>
+                      {d.url ? (
+                        <a href={d.url} target="_blank" rel="noopener noreferrer" className="block rounded-lg border border-line overflow-hidden hover:border-wall">
+                          {d.isPdf ? (
+                            <span className="grid place-items-center h-20 bg-milk-2 text-xs font-semibold">PDF</span>
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={d.url} alt={KIND[d.kind]} className="h-20 w-full object-cover" />
+                          )}
+                          <span className="block px-2 py-1 text-xs text-ink-2">{KIND[d.kind]} · {new Date(d.created_at).toLocaleDateString("sq-AL")}</span>
+                        </a>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <IdUpload guestId={g.id} bookingId={b.id} />
+              <p className="text-xs text-ink-3">Ruhet në hapësirë private. E shohin vetëm stafi me kod nga telefoni; lidhja skadon pas 2 minutash.</p>
+            </div>
+          )}
+          {g && (
             <form action={setBlacklist} className="pt-3 border-t border-line space-y-2">
               <input type="hidden" name="guestId" value={g.id} />
               <input type="hidden" name="back" value={`/admin/bookings/${b.id}`} />
@@ -148,13 +186,13 @@ export default async function BookingDetail({ params, searchParams }: {
                 <>
                   <p className="text-bad">I bllokuar: {g.blacklist_reason}</p>
                   <input type="hidden" name="on" value="0" />
-                  <button className="btn btn-ghost !py-2 w-full">Hiq bllokimin</button>
+                  <button className="btn btn-ghost btn-sm w-full">Hiq bllokimin</button>
                 </>
               ) : (
                 <>
                   <input type="hidden" name="on" value="1" />
                   <input className="field" name="reason" placeholder="Arsyeja e bllokimit" maxLength={300} />
-                  <button className="btn btn-danger !py-2 w-full">Blloko rezervimet online</button>
+                  <button className="btn btn-danger btn-sm w-full">Blloko rezervimet online</button>
                 </>
               )}
             </form>

@@ -1,6 +1,7 @@
 import { requireStaff } from "@/lib/auth";
 import { AdminNav } from "@/components/admin/nav";
 import { signOut } from "../actions";
+import { isTestPayments } from "@/lib/payments";
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
   const me = await requireStaff();
@@ -24,7 +25,14 @@ export default async function PanelLayout({ children }: { children: React.ReactN
         </form>
         <div className="glow-strip lg:hidden" />
       </aside>
-      <div className="min-w-0 px-4 sm:px-8 py-6 sm:py-8">{children}</div>
+      <div className="min-w-0 px-4 sm:px-8 py-6 sm:py-8">
+        {me.role === "owner" && isTestPayments() && (
+          <p className="mb-5 rounded-[var(--radius-field)] bg-warn-soft text-warn px-4 py-2.5 text-sm">
+            Pagesat online janë në modalitet testi derisa të lidhet banka NLB. Faqja nuk duhet hapur për publikun ende.
+          </p>
+        )}
+        {children}
+      </div>
     </div>
   );
 }

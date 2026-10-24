@@ -93,7 +93,7 @@ export async function connectWithInviteCode(code: string) {
     headers: { accept: "application/json", code },
     cache: "no-store",
   });
-  if (!res.ok) throw new Error("Invite code was rejected or has expired");
+  if (!res.ok) throw new Error("Kodi i lidhjes u refuzua ose ka skaduar.");
   const json = (await res.json()) as { token: string; refreshToken: string; expiresIn: number };
   await createAdminClient()
     .from("integration_tokens")
@@ -142,4 +142,50 @@ export async function listModifiedBookings(modifiedFrom: string): Promise<B24Boo
   if (propertyId) qs.set("propertyId", propertyId);
   const json = await call<{ data: B24Booking[] }>(`/bookings?${qs}`);
   return json.data ?? [];
+}
+
+export type CalendarDay = { roomId: number; date: string; price: number | null; minStay: number | null };
+
+/** Daily prices for all rooms of the property between two dates (inclusive). */
+export async function getCalendarPrices(startDate: string, endDate: string): Promise<CalendarDay[]> {
+  const propertyId = process.env.BEDS24_PROPERTY_ID;
+  if (!propertyId) throw new Error("BEDS24_PROPERTY_ID is not set");
+  const qs = new URLSearchParams({ propertyId, startDate, endDate, includePrices: "true", includeMinStay: "true" });
+  const json = await call<{ data: { roomId: number; calendar: { from: string; to: string; price1?: number; minStay?: number }[] }[] }>(
+    `/inventory/rooms/calendar?${qs}`,
+  );
+  const out: CalendarDay[] = [];
+  for (const room of json.data ?? []) {
+    for (const range of room.calendar ?? []) {
+      for (let d = new Date(range.from + "T00:00:00Z"); d <= new Date(range.to + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + 1)) {
+        out.push({ roomId: room.roomId, date: d.toISOString().slice(0, 10), price: range.price1 ?? null, minStay: range.minStay ?? null });
+      }
+    }
+  }
+  return out;
+}
+
+/** Sets the nightly price (and optionally minimum stay) for rooms over a date range. Channels pick it up from here. */
+export async function setPrices(roomIds: number[], from: string, to: string, price: number, minStay?: number) {
+  const body = roomIds.map((roomId) => ({
+    roomId,
+    calendar: [{ from, to, price1: price, ...(minStay ? { minStay } : {}) }],
+  }));
+  const res = await call<{ success: boolean }[]>("/inventory/rooms/calendar", { method: "POST", body: JSON.stringify(body) });
+  const failed = res.filter((r) => !r.success).length;
+  if (failed) throw new Error(`${failed} njësi nuk u përditësuan`);
+}
+
+/** Keeps property check-in/out times and room names/capacity in line with what the owner sets in the panel. */
+export async function updateProperty(patch: { checkInStart?: string; checkOutEnd?: string; rooms?: { id: number; name?: string; maxPeople?: number }[] }) {
+  const propertyId = Number(process.env.BEDS24_PROPERTY_ID);
+  if (!propertyId) throw new Error("BEDS24_PROPERTY_ID is not set");
+  const body = [{
+    id: propertyId,
+    ...(patch.checkInStart ? { checkInStart: patch.checkInStart } : {}),
+    ...(patch.checkOutEnd ? { checkOutEnd: patch.checkOutEnd } : {}),
+    ...(patch.rooms ? { roomTypes: patch.rooms } : {}),
+  }];
+  const res = await call<{ success: boolean }[]>("/properties", { method: "POST", body: JSON.stringify(body) });
+  if (!res[0]?.success) throw new Error("Kanalet nuk e pranuan ndryshimin");
 }

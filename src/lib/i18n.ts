@@ -1,10 +1,16 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 export type Lang = "sq" | "en";
 
+/** Albanian-speaking countries get Albanian by default; everyone else English. A manual choice (cookie) always wins. */
+const ALBANIAN_COUNTRIES = new Set(["XK", "AL", "MK", "ME"]);
+
 export async function getLang(): Promise<Lang> {
   const c = (await cookies()).get("lang")?.value;
-  return c === "en" ? "en" : "sq";
+  if (c === "en" || c === "sq") return c;
+  const country = (await headers()).get("x-vercel-ip-country")?.toUpperCase();
+  if (!country) return "sq";
+  return ALBANIAN_COUNTRIES.has(country) ? "sq" : "en";
 }
 
 export const dict = {

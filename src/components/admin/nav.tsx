@@ -11,6 +11,7 @@ const ITEMS = [
   { href: "/admin/guests", label: "Mysafirët" },
 ];
 const OWNER = [
+  { href: "/admin/prices", label: "Çmimet" },
   { href: "/admin/reports", label: "Raportet" },
   { href: "/admin/settings", label: "Cilësimet" },
 ];

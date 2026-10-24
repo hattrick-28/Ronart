@@ -29,9 +29,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="font-display text-3xl font-semibold text-wall-deep">Kalendari</h1>
         <div className="flex gap-2">
-          <Link className="btn btn-ghost !py-2" href={`/admin/calendar?from=${addDays(start, -DAYS)}`}>Më parë</Link>
-          <Link className="btn btn-ghost !py-2" href="/admin/calendar">Sot</Link>
-          <Link className="btn btn-ghost !py-2" href={`/admin/calendar?from=${end}`}>Më pas</Link>
+          <Link className="btn btn-ghost btn-sm" href={`/admin/calendar?from=${addDays(start, -DAYS)}`}>Më parë</Link>
+          <Link className="btn btn-ghost btn-sm" href="/admin/calendar">Sot</Link>
+          <Link className="btn btn-ghost btn-sm" href={`/admin/calendar?from=${end}`}>Më pas</Link>
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-3 text-xs text-ink-2">
@@ -57,9 +57,21 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                 <div className="sticky left-0 z-10 bg-white border-b border-line px-3 py-2 text-sm font-medium truncate">{u.name}</div>
                 <div className="relative border-b border-line" style={{ gridColumn: `span ${DAYS}` }}>
                   <div className="absolute inset-0 grid" style={{ gridTemplateColumns: `repeat(${DAYS}, minmax(0,1fr))` }}>
-                    {days.map((d) => <div key={d} className={`border-l border-line ${d === today ? "bg-glow/10" : ""}`} />)}
+                    {days.map((d) =>
+                      d >= today ? (
+                        <Link
+                          key={d}
+                          href={`/admin/bookings/new?unit=${u.id}&in=${d}&out=${addDays(d, 1)}`}
+                          title={`Rezervim i ri: ${u.name}, ${Number(d.slice(8))}`}
+                          aria-label={`Rezervim i ri për ${u.name} më ${d}`}
+                          className={`border-l border-line hover:bg-wall-soft/70 ${d === today ? "bg-glow/10" : ""}`}
+                        />
+                      ) : (
+                        <div key={d} className="border-l border-line bg-milk-2/50" />
+                      ),
+                    )}
                   </div>
-                  <div className="relative h-10">
+                  <div className="relative h-10 pointer-events-none">
                     {rows.map((b) => {
                       const s = b.check_in < start ? start : b.check_in;
                       const e = b.check_out > end ? end : b.check_out;
@@ -71,7 +83,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                           key={b.id}
                           href={`/admin/bookings/${b.id}`}
                           title={`${g?.full_name ?? ""} · ${CHANNEL_LABEL[b.channel]}`}
-                          className={`absolute top-1.5 bottom-1.5 rounded-md px-2 text-xs font-medium flex items-center truncate ${CHANNEL_BAR[b.channel]} ${b.status === "hold" || b.status === "pending" ? "opacity-60 border-2 border-dashed border-white/70" : ""} ${b.status === "checked_out" ? "opacity-40" : ""}`}
+                          className={`pointer-events-auto absolute top-1.5 bottom-1.5 rounded-md px-2 text-xs font-medium flex items-center truncate ${CHANNEL_BAR[b.channel]} ${b.status === "hold" || b.status === "pending" ? "opacity-60 border-2 border-dashed border-white/70" : ""} ${b.status === "checked_out" ? "opacity-40" : ""}`}
                           style={{ left: `calc(${left}% + ${b.check_in < start ? 0 : 50 / DAYS}%)`, width: `calc(${width}% )` }}
                         >
                           {g?.full_name ?? "—"}
@@ -85,7 +97,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           })}
         </div>
       </div>
-      <p className="mt-3 text-xs text-ink-3">Shiritat me vija: në pritje të pagesës ose konfirmimit. Shiritat fillojnë në mesditë të ditës së ardhjes.</p>
+      <p className="mt-3 text-xs text-ink-3">Kliko një kuti bosh për të krijuar rezervim në atë njësi dhe datë. Shiritat me vija: në pritje të pagesës ose konfirmimit.</p>
     </div>
   );
 }

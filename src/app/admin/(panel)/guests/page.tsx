@@ -20,8 +20,8 @@ export default async function GuestsPage({ searchParams }: { searchParams: Promi
       <h1 className="font-display text-3xl font-semibold text-wall-deep">Mysafirët</h1>
       <form className="mt-5 flex flex-wrap gap-2 items-end">
         <label className="flex-1 min-w-56"><span className="label">Kërko</span><input className="field" name="q" defaultValue={sp.q} placeholder="Emri, telefoni ose emaili" /></label>
-        <label className="flex items-center gap-2 text-sm h-[46px]"><input type="checkbox" name="blocked" value="1" defaultChecked={sp.blocked === "1"} /> Vetëm të bllokuarit</label>
-        <button className="btn btn-primary h-[46px]">Kërko</button>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="blocked" value="1" defaultChecked={sp.blocked === "1"} /> Vetëm të bllokuarit</label>
+        <button className="btn btn-primary">Kërko</button>
       </form>
       <ul className="mt-5 rounded-[var(--radius-panel)] border border-line bg-white divide-y divide-line">
         {(data ?? []).map((g) => {
@@ -38,8 +38,8 @@ export default async function GuestsPage({ searchParams }: { searchParams: Promi
                 <input type="hidden" name="guestId" value={g.id} />
                 <input type="hidden" name="back" value="/admin/guests" />
                 <input type="hidden" name="on" value={g.is_blacklisted ? "0" : "1"} />
-                {!g.is_blacklisted && <input className="field !py-1.5 w-44" name="reason" placeholder="Arsyeja" maxLength={300} />}
-                <button className={`btn !py-1.5 ${g.is_blacklisted ? "btn-ghost" : "btn-danger"}`}>{g.is_blacklisted ? "Hiq bllokimin" : "Blloko"}</button>
+                {!g.is_blacklisted && <input className="field field-sm w-44" name="reason" placeholder="Arsyeja" maxLength={300} />}
+                <button className={`btn btn-sm ${g.is_blacklisted ? "btn-ghost" : "btn-danger"}`}>{g.is_blacklisted ? "Hiq bllokimin" : "Blloko"}</button>
               </form>
             </li>
           );

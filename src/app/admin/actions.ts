@@ -7,7 +7,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireStaff } from "@/lib/auth";
 import { pushBooking } from "@/lib/sync";
-import { connectWithInviteCode } from "@/lib/beds24";
 import { nightsBetween } from "@/lib/pricing";
 import { getSettings } from "@/lib/settings";
 import { todayISO } from "@/lib/format";
@@ -200,8 +199,16 @@ export async function updateSettings(fd: FormData) {
     if (!/^\d{2}:\d{2}$/.test(t)) back("/admin/settings", "err", "Ora duhet të jetë në formatin 14:00.");
     await supabase.from("settings").update({ value: t, updated_at: new Date().toISOString() }).eq("key", k);
   }
+  let synced = true;
+  try {
+    const { updateProperty } = await import("@/lib/beds24");
+    await updateProperty({ checkInStart: String(fd.get("check_in_time")), checkOutEnd: String(fd.get("check_out_time")) });
+  } catch (e) {
+    synced = false;
+    console.error("property times sync failed", e);
+  }
   revalidatePath("/", "layout");
-  back("/admin/settings", "ok", "Cilësimet u ruajtën.");
+  back("/admin/settings", synced ? "ok" : "err", synced ? "Rregullat u ruajtën. Oraret e check-in/out u përditësuan edhe te kanalet." : "Rregullat u ruajtën, por oraret nuk u dërguan te kanalet. Provo përsëri.");
 }
 
 export async function updateUnit(fd: FormData) {
@@ -213,21 +220,20 @@ export async function updateUnit(fd: FormData) {
   if (!v.success) back("/admin/settings", "err", "Të dhënat e dhomës nuk janë të vlefshme.");
   const supabase = await createClient();
   const { id, ...rest } = v.data!;
-  const { error } = await supabase.from("units").update({ ...rest, has_balcony: fd.get("has_balcony") === "on", active: fd.get("active") === "on" }).eq("id", id);
+  const { data: unit, error } = await supabase.from("units")
+    .update({ ...rest, has_balcony: fd.get("has_balcony") === "on", active: fd.get("active") === "on" })
+    .eq("id", id).select("beds24_room_id").single();
   if (error) back("/admin/settings", "err", error.message);
-  back("/admin/settings", "ok", "Dhoma u ruajt.");
-}
-
-export async function connectBeds24(fd: FormData) {
-  await requireStaff({ owner: true });
-  const code = String(fd.get("code") ?? "").trim();
-  if (code.length < 20) back("/admin/settings", "err", "Kodi i ftesës duket i paplotë.");
-  try {
-    await connectWithInviteCode(code);
-  } catch (e) {
-    back("/admin/settings", "err", (e as Error).message);
+  if (unit?.beds24_room_id) {
+    try {
+      const { updateProperty } = await import("@/lib/beds24");
+      await updateProperty({ rooms: [{ id: Number(unit.beds24_room_id), name: rest.name, maxPeople: rest.max_guests }] });
+    } catch (e) {
+      console.error("room sync failed", e);
+      back("/admin/settings", "err", "Njësia u ruajt këtu, por nuk u dërgua te kanalet. Provo përsëri.");
+    }
   }
-  back("/admin/settings", "ok", "Beds24 u lidh.");
+  back("/admin/settings", "ok", `${rest.name} u ruajt (edhe te menaxheri i kanaleve).`);
 }
 
 export async function inviteStaff(fd: FormData) {
@@ -266,4 +272,64 @@ export async function markRefunded(fd: FormData) {
     internal_note: [b?.internal_note, `Rimbursimi u krye ${todayISO()}.`].filter(Boolean).join("\n"),
   }).eq("id", id);
   back(`/admin/bookings/${id}`, "ok", "U shënua si i rimbursuar.");
+}
+
+/* ---------------- prices (owner) ---------------- */
+
+export async function savePrices(fd: FormData) {
+  await requireStaff({ owner: true });
+  const path = "/admin/prices";
+  const v = z.object({
+    scope: z.enum(["apartment", "suite", "selected"]),
+    from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    price: z.coerce.number().min(1).max(5000),
+    minStay: z.union([z.literal(""), z.coerce.number().int().min(1).max(30)]).optional(),
+  }).safeParse(Object.fromEntries(fd));
+  if (!v.success) back(path, "err", "Kontrollo datat dhe çmimin.");
+  const p = v.data!;
+  if (p.to < p.from) back(path, "err", "Data 'deri' duhet të jetë pas datës 'nga'.");
+  if (p.from < todayISO()) back(path, "err", "Nuk mund të ndryshohen çmimet në të kaluarën.");
+
+  const supabase = await createClient();
+  let q = supabase.from("units").select("id, beds24_room_id, type").eq("active", true);
+  if (p.scope === "selected") {
+    const ids = fd.getAll("unit").map(String).filter((x) => /^[0-9a-f-]{36}$/.test(x));
+    if (!ids.length) back(path, "err", "Zgjidh të paktën një njësi.");
+    q = q.in("id", ids);
+  } else q = q.eq("type", p.scope);
+  const { data: units } = await q;
+  const roomIds = (units ?? []).map((u) => u.beds24_room_id).filter(Boolean) as number[];
+  if (!roomIds.length) back(path, "err", "Njësitë nuk janë të lidhura me kanalet.");
+
+  try {
+    const { setPrices } = await import("@/lib/beds24");
+    await setPrices(roomIds, p.from, p.to, p.price, p.minStay ? Number(p.minStay) : undefined);
+  } catch (e) {
+    back(path, "err", "Çmimi nuk u ruajt: " + (e as Error).message);
+  }
+  if (fd.get("asBase") === "on") {
+    await supabase.from("units").update({ base_price: p.price }).in("id", (units ?? []).map((u) => u.id));
+  }
+  revalidatePath("/", "layout");
+  back(path, "ok", `Çmimi ${p.price} € u vendos për ${roomIds.length} njësi (${p.from} – ${p.to}). Booking.com dhe Airbnb përditësohen vetë.`);
+}
+
+/* ---------------- guest ID documents ---------------- */
+
+export async function registerDocument(input: { guestId: string; bookingId: string; path: string; kind: string }) {
+  const me = await requireStaff();
+  const v = z.object({
+    guestId: z.uuid(), bookingId: z.uuid(),
+    path: z.string().regex(/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(jpg|pdf)$/),
+    kind: z.enum(["id_card", "passport", "driving_licence", "other"]),
+  }).safeParse(input);
+  if (!v.success || !v.data.path.startsWith(v.data.guestId + "/")) return { error: "Të dhëna të pavlefshme." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("guest_documents").insert({
+    guest_id: v.data.guestId, booking_id: v.data.bookingId, storage_path: v.data.path, kind: v.data.kind, uploaded_by: me.userId,
+  });
+  if (error) return { error: error.message };
+  revalidatePath(`/admin/bookings/${v.data.bookingId}`);
+  return { ok: true };
 }

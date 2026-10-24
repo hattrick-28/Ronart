@@ -42,7 +42,7 @@ export default async function Home() {
         <div className="glow-strip relative z-10" />
         <div className="walnut">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 py-7">
-            <div className="max-w-3xl"><SearchBar d={d} /></div>
+            <div className="max-w-3xl"><SearchBar d={d} lang={lang} /></div>
           </div>
         </div>
       </section>

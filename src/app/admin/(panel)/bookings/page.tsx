@@ -45,7 +45,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
         </label>
         <label><span className="label">Ardhja nga</span><input className="field" type="date" name="from" defaultValue={sp.from} /></label>
         <label><span className="label">deri</span><input className="field" type="date" name="to" defaultValue={sp.to} /></label>
-        <button className="btn btn-primary h-[46px] col-span-2 md:col-span-1">Filtro</button>
+        <button className="btn btn-primary col-span-2 md:col-span-1">Filtro</button>
       </form>
 
       {error && <p className="mt-4 text-bad text-sm">{error.message}</p>}

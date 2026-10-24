@@ -22,7 +22,7 @@ export function SiteHeader({ d, lang }: { d: Dict; lang: Lang }) {
           >
             {other.toUpperCase()}
           </a>
-          <Link href="/rooms" className="btn btn-primary !py-2 !px-4 text-sm">{d.nav_book}</Link>
+          <Link href="/rooms" className="btn btn-primary btn-sm !px-4 text-sm">{d.nav_book}</Link>
         </div>
       </div>
     </header>

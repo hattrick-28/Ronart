@@ -45,7 +45,7 @@ export default async function RoomsPage({ searchParams }: { searchParams: Promis
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
       <h1 className="font-display text-4xl font-semibold text-wall-deep">{d.rooms_title}</h1>
       <div className="mt-6 rounded-[var(--radius-panel)] bg-white border border-line p-4 sm:p-5">
-        <SearchBar d={d} checkIn={checkIn} checkOut={checkOut} guests={guests} tone="plain" />
+        <SearchBar d={d} lang={lang} checkIn={checkIn} checkOut={checkOut} guests={guests} tone="plain" />
       </div>
 
       {!validDates && <p className="mt-6 text-ink-2">{d.choose_dates}</p>}
@@ -97,7 +97,7 @@ export default async function RoomsPage({ searchParams }: { searchParams: Promis
                   </div>
                   <div className="row-span-2 sm:row-span-1 justify-self-end">
                     {results && u.available ? (
-                      <Link className="btn btn-primary !py-2" href={`/book?unit=${u.id}&in=${checkIn}&out=${checkOut}&guests=${guests}`}>
+                      <Link className="btn btn-primary btn-sm" href={`/book?unit=${u.id}&in=${checkIn}&out=${checkOut}&guests=${guests}`}>
                         {d.choose}
                       </Link>
                     ) : null}

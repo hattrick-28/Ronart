@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/bricolage-grotesque";
 import "@fontsource-variable/figtree";
 import "./globals.css";
+import { getLang } from "@/lib/i18n";
 
 export const metadata: Metadata = {
   title: { default: "Ronart Apartments", template: "%s · Ronart Apartments" },
@@ -11,9 +12,10 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#22362b" };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const lang = await getLang();
   return (
-    <html lang="sq" className="h-full antialiased">
+    <html lang={lang} className="h-full antialiased">
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

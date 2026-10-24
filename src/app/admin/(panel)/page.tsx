@@ -33,9 +33,12 @@ function List({ title, rows, empty, show = "balance" }: { title: string; rows: R
         <ul className="divide-y divide-line border-t border-line">
           {rows.map((b) => (
             <li key={b.id}>
-              <Link href={`/admin/bookings/${b.id}`} className="px-5 py-3 flex flex-wrap items-center gap-x-4 gap-y-1 hover:bg-milk">
-                <span className="font-semibold w-28 shrink-0">{b.units?.name}</span>
-                <span className="min-w-0 flex-1 truncate">{b.guests?.full_name ?? "—"} <span className="text-ink-3 text-sm">· {CHANNEL_LABEL[b.channel]}</span></span>
+              <Link href={`/admin/bookings/${b.id}`} className="px-5 py-3 grid grid-cols-[1fr_auto] sm:grid-cols-[8.5rem_1fr_auto] items-center gap-x-4 gap-y-1 hover:bg-milk">
+                <span className="font-semibold whitespace-nowrap">{b.units?.name}</span>
+                <span className="min-w-0 row-start-2 sm:row-start-auto col-span-2 sm:col-span-1">
+                  <span className="block truncate">{b.guests?.full_name ?? "—"}</span>
+                  <span className="block text-xs text-ink-3">{CHANNEL_LABEL[b.channel]}</span>
+                </span>
                 {show === "deadline" && b.confirm_deadline ? (
                   <Pill tone="bg-warn-soft text-warn">Anulohet {new Date(b.confirm_deadline).toLocaleString("sq-AL", { timeZone: "Europe/Belgrade", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</Pill>
                 ) : (
@@ -117,7 +120,7 @@ export default async function Today({ searchParams }: { searchParams: Promise<Re
         <List title="Largimet sot" rows={(departures.data ?? []) as unknown as Row[]} empty="Asnjë largim sot." />
         <List title="Pa konfirmuar (telefon)" rows={(pending.data ?? []) as unknown as Row[]} empty="Asnjë rezervim në pritje." show="deadline" />
         <section className="rounded-[var(--radius-panel)] bg-white border border-line p-5 text-sm text-ink-2">
-          <h2 className="font-display text-lg font-semibold text-ink">Statuset</h2>
+          <h2 className="font-display text-lg font-semibold text-ink">Si funksionon</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {Object.entries(STATUS_LABEL).map(([k, v]) => <Pill key={k} tone={STATUS_TONE[k]}>{v}</Pill>)}
           </div>
