@@ -64,13 +64,19 @@ export default async function LegalPage({ params }: { params: Promise<{ legal: s
             "Mbledhim vetëm të dhënat e nevojshme për rezervimin: emrin, emailin, telefonin, shtetin dhe datat e qëndrimit.",
             "Të dhënat e kartelës futen vetëm në faqen e sigurt të bankës NLB. Ne nuk i shohim dhe nuk i ruajmë.",
             "Të dhënat ruhen në serverë në BE dhe aksesohen vetëm nga stafi i autorizuar. Ndahen me Booking.com/Airbnb vetëm kur rezervoni përmes tyre.",
-            `Mund të kërkoni kopjen ose fshirjen e të dhënave tuaja në ${SITE.email}.`,
+            `Në check-in mund t'ju kërkohet dokumenti i identifikimit. Kopja e tij ruhet vetëm për verifikim dhe fshihet automatikisht ${s.id_doc_retention_days} ditë pas largimit.`,
+            `Emri, telefoni dhe emaili ruhen për rezervimin dhe kontabilitetin, dhe anonimizohen automatikisht ${s.guest_data_retention_years} vjet pas qëndrimit të fundit.`,
+            "Baza ligjore: Ligji Nr. 06/L-082 për Mbrojtjen e të Dhënave Personale (kontrata, detyrimet ligjore dhe interesi i ligjshëm).",
+            `Mund të kërkoni kopjen, korrigjimin ose fshirjen e të dhënave tuaja në ${SITE.email}, dhe mund të ankoheni te Agjencia për Informim dhe Privatësi.`,
           ]
         : [
             "We collect only what a booking needs: name, email, phone, country and stay dates.",
             "Card details are entered only on NLB bank's secure page. We never see or store them.",
             "Data is stored on servers in the EU and accessed only by authorised staff. It is shared with Booking.com/Airbnb only when you book through them.",
-            `You can request a copy or deletion of your data at ${SITE.email}.`,
+            `At check-in we may ask for an ID document. The copy is used only to verify your identity and is deleted automatically ${s.id_doc_retention_days} days after departure.`,
+            `Your name, phone and email are kept for the booking and accounting, and are anonymised automatically ${s.guest_data_retention_years} years after your last stay.`,
+            "Legal basis: Kosovo Law No. 06/L-082 on Protection of Personal Data (contract, legal obligations and legitimate interest).",
+            `You can request a copy, correction or deletion of your data at ${SITE.email}, and you can complain to the Information and Privacy Agency.`,
           ],
     },
   };

@@ -7,6 +7,7 @@ import { CHANNEL_LABEL, METHOD_LABEL, STATUS_LABEL, STATUS_TONE, Pill } from "@/
 import { nightsBetween } from "@/lib/pricing";
 import { Flash } from "@/components/admin/flash";
 import { IdUpload } from "@/components/admin/id-upload";
+import { DocActions } from "@/components/admin/doc-actions";
 import { markRefunded, recordPayment, saveInternalNote, setBlacklist, setBookingStatus } from "../../../actions";
 
 export default async function BookingDetail({ params, searchParams }: {
@@ -156,26 +157,27 @@ export default async function BookingDetail({ params, searchParams }: {
             <div className="pt-3 border-t border-line space-y-3">
               <p className="font-semibold">Dokumenti i identifikimit</p>
               {docs.length > 0 && (
-                <ul className="grid grid-cols-2 gap-2">
+                <ul className="grid grid-cols-1 gap-3">
                   {docs.map((d) => (
                     <li key={d.id}>
                       {d.url ? (
                         <a href={d.url} target="_blank" rel="noopener noreferrer" className="block rounded-lg border border-line overflow-hidden hover:border-wall">
                           {d.isPdf ? (
-                            <span className="grid place-items-center h-20 bg-milk-2 text-xs font-semibold">PDF</span>
+                            <span className="grid place-items-center h-32 bg-milk-2 text-xs font-semibold">PDF</span>
                           ) : (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={d.url} alt={KIND[d.kind]} className="h-20 w-full object-cover" />
+                            <img src={d.url} alt={KIND[d.kind]} className="h-32 w-full object-cover" />
                           )}
                           <span className="block px-2 py-1 text-xs text-ink-2">{KIND[d.kind]} · {new Date(d.created_at).toLocaleDateString("sq-AL")}</span>
                         </a>
                       ) : null}
+                      <DocActions docId={d.id} bookingId={b.id} guestId={g.id} kind={d.kind} />
                     </li>
                   ))}
                 </ul>
               )}
               <IdUpload guestId={g.id} bookingId={b.id} />
-              <p className="text-xs text-ink-3">Ruhet në hapësirë private. E shohin vetëm stafi me kod nga telefoni; lidhja skadon pas 2 minutash.</p>
+              <p className="text-xs text-ink-3">Ruhet në hapësirë private. E shohin vetëm stafi me kod nga telefoni; lidhja skadon pas 2 minutash. Fshihet vetë pas largimit sipas rregullës te Cilësimet.</p>
             </div>
           )}
           {g && (

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { registerDocument } from "@/app/admin/actions";
+import { deleteDocument, registerDocument } from "@/app/admin/actions";
 
 /** Shrinks a photo to max 1800px JPEG in the browser, so uploads are fast on mobile data. */
 async function shrink(file: File): Promise<Blob> {
@@ -17,10 +17,12 @@ async function shrink(file: File): Promise<Blob> {
   return await new Promise((res) => canvas.toBlob((b) => res(b ?? file), "image/jpeg", 0.82));
 }
 
-export function IdUpload({ guestId, bookingId }: { guestId: string; bookingId: string }) {
+export function IdUpload({ guestId, bookingId, replaceDocId, replaceKind, compact }: {
+  guestId: string; bookingId: string; replaceDocId?: string; replaceKind?: string; compact?: boolean;
+}) {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
-  const [kind, setKind] = useState("id_card");
+  const [kind, setKind] = useState(replaceKind ?? "id_card");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +43,10 @@ export function IdUpload({ guestId, bookingId }: { guestId: string; bookingId: s
       if (upErr) throw new Error(upErr.message);
       const res = await registerDocument({ guestId, bookingId, path, kind });
       if (res?.error) throw new Error(res.error);
+      if (replaceDocId) {
+        const del = await deleteDocument({ docId: replaceDocId, bookingId });
+        if (del?.error) throw new Error("Dokumenti i ri u ruajt, por i vjetri nuk u fshi: " + del.error);
+      }
       router.refresh();
     } catch (err) {
       setError("Ngarkimi dështoi: " + (err as Error).message);
@@ -48,6 +54,18 @@ export function IdUpload({ guestId, bookingId }: { guestId: string; bookingId: s
       setBusy(false);
       if (input.current) input.current.value = "";
     }
+  }
+
+  if (compact) {
+    return (
+      <>
+        <button type="button" className="btn btn-ghost btn-sm flex-1" disabled={busy} onClick={() => input.current?.click()}>
+          {busy ? "…" : "Zëvendëso"}
+        </button>
+        <input ref={input} type="file" accept="image/*,application/pdf" capture="environment" className="sr-only" onChange={onFile} />
+        {error && <p role="alert" className="basis-full text-xs text-bad">{error}</p>}
+      </>
+    );
   }
 
   return (

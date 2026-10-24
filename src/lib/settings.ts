@@ -9,6 +9,8 @@ export type Settings = {
   max_active_bookings_per_contact: number;
   check_in_time: string;
   check_out_time: string;
+  id_doc_retention_days: number;
+  guest_data_retention_years: number;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -19,6 +21,8 @@ export const DEFAULT_SETTINGS: Settings = {
   max_active_bookings_per_contact: 3,
   check_in_time: "16:00",
   check_out_time: "10:00",
+  id_doc_retention_days: 30,
+  guest_data_retention_years: 6,
 };
 
 export async function getSettings(): Promise<Settings> {

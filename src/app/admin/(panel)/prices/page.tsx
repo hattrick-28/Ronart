@@ -59,7 +59,7 @@ export default async function PricesPage({ searchParams }: { searchParams: Promi
           <label><span className="label">Min. netë (opsionale)</span><input className="field" type="number" name="minStay" min={1} max={30} placeholder="1" /></label>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <label className="flex items-center gap-2 text-sm text-ink-2"><input type="checkbox" name="asBase" /> Përdore edhe si çmim bazë (kur kanalet nuk përgjigjen)</label>
+          <p className="text-sm text-ink-3">Ndryshimi shkon menjëherë në faqe, Booking.com dhe Airbnb.</p>
           <button className="btn btn-primary">Ruaj çmimin</button>
         </div>
       </form>

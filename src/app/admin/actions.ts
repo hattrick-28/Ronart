@@ -184,10 +184,11 @@ export async function setBlacklist(fd: FormData) {
 export async function updateSettings(fd: FormData) {
   await requireStaff({ owner: true });
   const supabase = await createClient();
-  const numeric = ["hold_minutes", "full_payment_discount_pct", "free_cancellation_days", "phone_confirm_hours", "max_active_bookings_per_contact"];
+  const numeric = ["hold_minutes", "full_payment_discount_pct", "free_cancellation_days", "phone_confirm_hours", "max_active_bookings_per_contact", "id_doc_retention_days", "guest_data_retention_years"];
   const limits: Record<string, [number, number]> = {
     hold_minutes: [5, 60], full_payment_discount_pct: [0, 30], free_cancellation_days: [0, 60],
     phone_confirm_hours: [1, 168], max_active_bookings_per_contact: [1, 18],
+    id_doc_retention_days: [1, 365], guest_data_retention_years: [1, 10],
   };
   for (const k of numeric) {
     const n = Number(fd.get(k));
@@ -214,7 +215,7 @@ export async function updateSettings(fd: FormData) {
 export async function updateUnit(fd: FormData) {
   await requireStaff({ owner: true });
   const v = z.object({
-    id: z.uuid(), name: z.string().trim().min(2).max(60), base_price: z.coerce.number().min(0).max(5000),
+    id: z.uuid(), name: z.string().trim().min(2).max(60),
     max_guests: z.coerce.number().int().min(1).max(10), size_m2: z.coerce.number().int().min(0).max(500),
   }).safeParse(Object.fromEntries(fd));
   if (!v.success) back("/admin/settings", "err", "Të dhënat e dhomës nuk janë të vlefshme.");
@@ -308,7 +309,8 @@ export async function savePrices(fd: FormData) {
   } catch (e) {
     back(path, "err", "Çmimi nuk u ruajt: " + (e as Error).message);
   }
-  if (fd.get("asBase") === "on") {
+  // Keep the fallback price in line when the change covers today.
+  if (p.from <= todayISO() && p.to >= todayISO()) {
     await supabase.from("units").update({ base_price: p.price }).in("id", (units ?? []).map((u) => u.id));
   }
   revalidatePath("/", "layout");
@@ -330,6 +332,24 @@ export async function registerDocument(input: { guestId: string; bookingId: stri
     guest_id: v.data.guestId, booking_id: v.data.bookingId, storage_path: v.data.path, kind: v.data.kind, uploaded_by: me.userId,
   });
   if (error) return { error: error.message };
+  revalidatePath(`/admin/bookings/${v.data.bookingId}`);
+  return { ok: true };
+}
+
+export async function deleteDocument(input: { docId: string; bookingId: string }) {
+  const me = await requireStaff();
+  const v = z.object({ docId: z.uuid(), bookingId: z.uuid() }).safeParse(input);
+  if (!v.success) return { error: "Të dhëna të pavlefshme." };
+  const supabase = await createClient();
+  const { data: doc } = await supabase.from("guest_documents").select("id, storage_path, guest_id, kind").eq("id", v.data.docId).single();
+  if (!doc) return { error: "Dokumenti nuk u gjet." };
+  const { error: stErr } = await supabase.storage.from("guest-ids").remove([doc.storage_path]);
+  if (stErr) return { error: stErr.message };
+  const { error } = await supabase.from("guest_documents").delete().eq("id", doc.id);
+  if (error) return { error: error.message };
+  await createAdminClient().from("audit_log").insert({
+    actor: me.userId, action: "delete", entity: "guest_documents", entity_id: doc.id, data: { guest_id: doc.guest_id, kind: doc.kind },
+  });
   revalidatePath(`/admin/bookings/${v.data.bookingId}`);
   return { ok: true };
 }

@@ -12,7 +12,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const supabase = await createClient();
   const [s, { data: units }, { data: staff }] = await Promise.all([
     getSettings(),
-    supabase.from("units").select("id, code, name, base_price, max_guests, size_m2, has_balcony, active").order("sort"),
+    supabase.from("units").select("id, code, name, max_guests, size_m2, has_balcony, active").order("sort"),
     supabase.from("staff").select("user_id, full_name, role, active").order("created_at"),
   ]);
   
@@ -39,6 +39,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           {field("max_active_bookings_per_contact", "Maks. rezervime aktive për një mysafir", "Ndalon që dikush të zërë shumë dhoma online pa ardhur.")}
           {field("check_in_time", "Check-in nga ora", "Shfaqet në faqe dhe në konfirmim.")}
           {field("check_out_time", "Check-out deri në orën", "Shfaqet në faqe dhe në konfirmim.")}
+          {field("id_doc_retention_days", "Fshirja e letërnjoftimeve (ditë)", "Fotot e dokumenteve fshihen vetë kaq ditë pas largimit të mysafirit.")}
+          {field("guest_data_retention_years", "Anonimizimi i mysafirëve (vjet)", "Emri, telefoni dhe emaili fshihen kaq vjet pas qëndrimit të fundit. Rezervimet dhe pagesat mbeten për kontabilitet.")}
           <div className="sm:col-span-3"><button className="btn btn-primary">Ruaj rregullat</button></div>
         </form>
       </section>
@@ -73,13 +75,15 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
       <section className="rounded-[var(--radius-panel)] bg-white border border-line p-5">
         <h2 className="font-display text-lg font-semibold">Njësitë</h2>
-        <p className="text-sm text-ink-3 mt-1">Çmimet ditore dhe sezonale ndryshohen te <Link className="underline" href="/admin/prices">Çmimet</Link>. Emri dhe numri i personave dërgohen edhe te menaxheri i kanaleve. Emri publik në Booking.com/Airbnb ndryshohet te ata.</p>
-        <div className="mt-3 divide-y divide-line">
+        <p className="text-sm text-ink-3 mt-1">Çmimet ndryshohen vetëm te <Link className="underline" href="/admin/prices">Çmimet</Link>. Emri dhe numri i personave dërgohen edhe te menaxheri i kanaleve; emri publik në Booking.com/Airbnb ndryshohet te ata.</p>
+        <div className="mt-3 hidden sm:grid grid-cols-[1.4fr_6rem_6rem_auto_auto_auto] gap-2 text-xs font-semibold text-ink-3 px-0.5">
+          <span>Emri</span><span>Persona</span><span>Madhësia m²</span><span className="w-[4.6rem]" /><span className="w-[4.2rem]" /><span className="w-[3.6rem]" />
+        </div>
+        <div className="mt-1 divide-y divide-line">
           {(units ?? []).map((u) => (
-            <form key={u.id} action={updateUnit} className="py-2.5 grid grid-cols-2 sm:grid-cols-[1.4fr_6rem_6rem_6rem_auto_auto_auto] gap-2 items-center text-sm">
+            <form key={u.id} action={updateUnit} className="py-2.5 grid grid-cols-2 sm:grid-cols-[1.4fr_6rem_6rem_auto_auto_auto] gap-2 items-center text-sm">
               <input type="hidden" name="id" value={u.id} />
               <input className="field field-sm col-span-2 sm:col-span-1" name="name" defaultValue={u.name} aria-label="Emri" />
-              <input className="field field-sm" name="base_price" type="number" step="0.01" defaultValue={Number(u.base_price)} aria-label="Çmimi €" />
               <input className="field field-sm" name="max_guests" type="number" defaultValue={u.max_guests} aria-label="Persona" />
               <input className="field field-sm" name="size_m2" type="number" defaultValue={u.size_m2 ?? 0} aria-label="m²" />
               <label className="flex items-center gap-1.5"><input type="checkbox" name="has_balcony" defaultChecked={u.has_balcony} /> Ballkon</label>

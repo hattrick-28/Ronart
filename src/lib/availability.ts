@@ -1,7 +1,8 @@
 import "server-only";
 import { createAdminClient } from "./supabase/admin";
 import { createPublicClient } from "./supabase/public";
-import { beds24Connected, getOffers } from "./beds24";
+import { beds24Connected, getFromPrices, getOffers } from "./beds24";
+import { todayISO } from "./format";
 import { nightsBetween } from "./pricing";
 
 export type Unit = {
@@ -52,7 +53,20 @@ export async function listUnits(): Promise<Unit[]> {
     .select(UNIT_COLUMNS)
     .eq("active", true)
     .order("sort");
-  return (data ?? []).map((u) => ({ ...u, base_price: Number(u.base_price) })) as Unit[];
+  const units = (data ?? []).map((u) => ({ ...u, base_price: Number(u.base_price) })) as Unit[];
+  // Show the live "from" price (same source as Booking.com/Airbnb); fall back to the stored price.
+  try {
+    if (await beds24Connected()) {
+      const live = await getFromPrices(todayISO());
+      for (const u of units) {
+        const p = u.beds24_room_id ? live.get(u.beds24_room_id) : undefined;
+        if (p) u.base_price = p;
+      }
+    }
+  } catch (e) {
+    console.error("live from-prices unavailable, using stored prices", e);
+  }
+  return units;
 }
 
 /**

@@ -189,3 +189,20 @@ export async function updateProperty(patch: { checkInStart?: string; checkOutEnd
   const res = await call<{ success: boolean }[]>("/properties", { method: "POST", body: JSON.stringify(body) });
   if (!res[0]?.success) throw new Error("Kanalet nuk e pranuan ndryshimin");
 }
+
+/** Lowest nightly price per room over the next 60 days. Cached 5 minutes per server instance to respect API limits. */
+let fromCache: { at: number; data: Map<number, number> } | null = null;
+export async function getFromPrices(today: string): Promise<Map<number, number>> {
+  if (fromCache && Date.now() - fromCache.at < 5 * 60_000) return fromCache.data;
+  const end = new Date(today + "T00:00:00Z");
+  end.setUTCDate(end.getUTCDate() + 60);
+  const days = await getCalendarPrices(today, end.toISOString().slice(0, 10));
+  const map = new Map<number, number>();
+  for (const d of days) {
+    if (d.price == null || d.price <= 0) continue;
+    const cur = map.get(d.roomId);
+    if (cur === undefined || d.price < cur) map.set(d.roomId, d.price);
+  }
+  fromCache = { at: Date.now(), data: map };
+  return map;
+}
