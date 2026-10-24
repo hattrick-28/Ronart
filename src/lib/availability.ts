@@ -33,14 +33,14 @@ function demoUnits(): Unit[] {
     name: `Apartamenti ${i + 1}`, type: "apartment" as const,
     description_sq: "Apartament i ngrohtë me mur të gjelbër të teksturuar, dru arre dhe dritë të butë.",
     description_en: "A warm apartment with a textured green feature wall, walnut wood and soft light.",
-    max_guests: 2, beds: "1 krevat dopio", size_m2: 28, has_balcony: (i + 1) % 3 === 0, base_price: 55, photos: [], beds24_room_id: null,
+    max_guests: 2, beds: "1 krevat dopio", size_m2: 28, has_balcony: (i + 1) % 3 === 0, base_price: 45, photos: [], beds24_room_id: null,
   }));
   const su = Array.from({ length: 5 }, (_, i) => ({
     id: `00000000-0000-4000-8000-0000000001${String(i + 1).padStart(2, "0")}`, code: `SU${i + 1}`,
     name: `Suita ${i + 1}`, type: "suite" as const,
     description_sq: "Suitë e gjerë me dritare nga dyshemeja deri në tavan, ballkon dhe zonë ndenjeje.",
     description_en: "A spacious suite with floor-to-ceiling windows, balcony and a sitting area.",
-    max_guests: 3, beds: "1 krevat king + divan", size_m2: 38, has_balcony: true, base_price: 70, photos: [], beds24_room_id: null,
+    max_guests: 3, beds: "1 krevat king + divan", size_m2: 38, has_balcony: true, base_price: 60, photos: [], beds24_room_id: null,
   }));
   return [...ap, ...su];
 }

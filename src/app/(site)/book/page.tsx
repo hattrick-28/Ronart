@@ -35,8 +35,8 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
-      <h1 className="font-display text-4xl font-semibold text-wall-deep">{d.book_title}</h1>
-      <div className="mt-8 grid lg:grid-cols-[1fr_22rem] gap-10 items-start">
+      <h1 className="font-display text-3xl sm:text-4xl font-semibold text-wall-deep">{d.book_title}</h1>
+      <div className="mt-6 sm:mt-8 grid lg:grid-cols-[1fr_22rem] gap-10 items-start">
         <BookingForm
           lang={lang}
           d={d}
@@ -47,8 +47,8 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
           quote={q}
           turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""}
         />
-        <aside className="lg:sticky lg:top-24 rounded-[var(--radius-panel)] overflow-hidden border border-line bg-white">
-          <Image src={`/rooms/${unit.type}.jpg`} alt="" width={1536} height={1024} className="aspect-[3/2] object-cover" />
+        <aside className="order-first lg:order-none lg:sticky lg:top-24 rounded-[var(--radius-panel)] overflow-hidden border border-line bg-white">
+          <Image src={`/rooms/${unit.type}.jpg`} alt="" width={1536} height={1024} sizes="(min-width: 1024px) 22rem, 100vw" className="hidden lg:block aspect-[3/2] object-cover" />
           <div className="p-5">
             <p className="font-display text-xl font-semibold">{unit.name}</p>
             <p className="text-sm text-ink-3">{unit.type === "suite" ? d.suite : d.apartment}, {d.up_to} {unit.max_guests} {d.people}</p>

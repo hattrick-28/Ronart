@@ -43,9 +43,8 @@ export async function pushBooking(bookingId: string): Promise<void> {
     email: guest?.email ?? undefined,
     phone: guest?.phone ?? undefined,
     price: Number(b.total_amount),
-    apiReference: b.ref,
-    referer: "Ronart website",
-    notes: b.guest_note ?? undefined,
+    // Beds24 does not keep apiReference/referer for API bookings, so the ref goes in the notes.
+    notes: [`${b.ref} · ${b.channel === "website" ? "Faqja Ronart" : "Paneli Ronart"}`, b.guest_note].filter(Boolean).join("\n"),
   });
   await db.from("bookings").update({ beds24_booking_id: id, beds24_sync_needed: false }).eq("id", b.id);
 }
@@ -83,11 +82,17 @@ function fromBeds24Status(s: string): Status {
 export async function importBeds24Booking(b: B24Booking) {
   const db = createAdminClient();
 
-  // Our own website/phone booking echoed back: only follow cancellations made in Beds24.
-  if (b.apiReference?.startsWith("RON-")) {
+  const OURS = ["website", "phone", "walkin"];
+  const { data: mine } = await db.from("bookings").select("id, channel, status").eq("beds24_booking_id", b.id).maybeSingle();
+  const refInNotes = /RON-[A-Z0-9]{6}/.exec(`${b.notes ?? ""} ${b.apiReference ?? ""}`)?.[0];
+
+  // Our own website/staff booking echoed back by Beds24: never overwrite it, only follow a cancellation made in Beds24.
+  if ((mine && OURS.includes(mine.channel)) || refInNotes || b.referer === "API") {
     if (b.status === "cancelled") {
-      await db.from("bookings").update({ status: "cancelled", cancelled_reason: "cancelled_in_beds24" })
-        .eq("ref", b.apiReference).in("status", ["hold", "pending", "confirmed"]);
+      const q = db.from("bookings").update({ status: "cancelled", cancelled_reason: "cancelled_in_beds24" })
+        .in("status", ["hold", "pending", "confirmed"]);
+      if (mine) await q.eq("id", mine.id);
+      else if (refInNotes) await q.eq("ref", refInNotes);
     }
     return { action: "own_booking" };
   }
@@ -125,7 +130,7 @@ export async function importBeds24Booking(b: B24Booking) {
     beds24_sync_needed: false,
   } as const;
 
-  const { data: existing } = await db.from("bookings").select("id").eq("beds24_booking_id", b.id).maybeSingle();
+  const existing = mine;
   const write = existing
     ? db.from("bookings").update(row).eq("id", existing.id)
     : db.from("bookings").insert(row);

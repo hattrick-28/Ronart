@@ -1,11 +1,13 @@
 import "server-only";
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "./supabase/server";
 
 export type StaffUser = { userId: string; email: string; name: string; role: "owner" | "reception" };
 
 /** Every admin page and action calls this. The database enforces the same rules again (RLS + 2FA). */
-export async function requireStaff(opts: { owner?: boolean } = {}): Promise<StaffUser> {
+/** One auth + staff lookup per request, shared by the layout and the page. */
+const loadStaff = cache(async (): Promise<StaffUser> => {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
@@ -17,6 +19,11 @@ export async function requireStaff(opts: { owner?: boolean } = {}): Promise<Staf
     .eq("user_id", claims.sub)
     .maybeSingle();
   if (!staff || !staff.active) redirect("/admin/login?e=no_access");
-  if (opts.owner && staff.role !== "owner") redirect("/admin?e=owner_only");
   return { userId: claims.sub, email: String(claims.email ?? ""), name: staff.full_name, role: staff.role };
+});
+
+export async function requireStaff(opts: { owner?: boolean } = {}): Promise<StaffUser> {
+  const me = await loadStaff();
+  if (opts.owner && me.role !== "owner") redirect("/admin?err=" + encodeURIComponent("Vetëm pronari ka qasje këtu."));
+  return me;
 }
