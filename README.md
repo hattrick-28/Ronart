@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ronart Apartments – booking website + staff CRM
 
-## Getting Started
+Next.js 16 (TypeScript) · Supabase (Postgres, Auth with 2FA) · Beds24 (channel manager) · NLB e-commerce · Vercel
 
-First, run the development server:
+## How it fits together
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+Booking.com ─┐
+Airbnb ──────┼── Beds24  (rooms, prices, availability, channel sync)
+Website ─────┘     │  API v2 + booking webhook
+                   ▼
+        Supabase   (guests, bookings, payments, staff, audit log)
+                   │
+        Next.js on Vercel: public site + /admin staff panel
+                   │
+        NLB hosted payment page (3-D Secure)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+* **Availability** = free in our DB **and** offered by Beds24 (which includes Booking.com/Airbnb).
+* **Website booking**: 15-min hold (Beds24 status `request`, blocks every channel) → NLB page → signed bank
+  notification confirms it. Unpaid holds expire automatically (pg_cron every minute).
+* **Double booking** is impossible inside our DB (Postgres exclusion constraint). Overlapping channel bookings
+  are stored, flagged "OVERBOOKING" and shown on the dashboard.
+* **Payment options**: pay in full (discount) or deposit = first night now, rest at reception (cash/card).
+* **Phone bookings**: "pending" auto-cancel after N hours unless confirmed.
+* **Staff panel** requires password + authenticator code (2FA). The database itself refuses data to sessions
+  without 2FA (RLS checks `aal2`). Roles: owner, reception.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables (Vercel → Project → Settings → Environment Variables)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+See `.env.example`. Secrets (`SUPABASE_SECRET_KEY`, `APP_SECRET`, `CRON_SECRET`, `TURNSTILE_SECRET_KEY`,
+`BEDS24_WEBHOOK_SECRET`, `NLB_*`) must be **Sensitive** and never prefixed with `NEXT_PUBLIC_`.
 
-## Learn More
+`BEDS24_PROPERTY_ID=363014`
 
-To learn more about Next.js, take a look at the following resources:
+## Go-live checklist
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [ ] Supabase → Authentication → disable "Allow new users to sign up"
+- [ ] Create owner login, add row in `staff` (role `owner`), log in, scan 2FA QR
+- [ ] Turnstile keys set
+- [ ] Beds24 webhook: `https://<domain>/api/beds24/webhook?key=<BEDS24_WEBHOOK_SECRET>`
+- [ ] Sync job: pg_cron calls `/api/cron/sync` every minute (see `supabase/cron.sql`)
+- [ ] NLB: implement `src/lib/payments/nlb.ts` from bank docs, set `PAYMENT_PROVIDER=nlb`
+- [ ] Real prices in Beds24, real photos, address, company name + NUI (`src/lib/site.ts`), legal texts reviewed
+- [ ] Delete test bookings (RON-FEFC51, RON-914B0F) and the empty "New Property" in Beds24
+- [ ] Only then connect Booking.com and Airbnb in Beds24
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Local development
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+cp .env.example .env.local   # DEMO_DATA=1 renders the public site with sample data
+npm install && npm run dev
+```
