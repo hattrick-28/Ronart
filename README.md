@@ -36,10 +36,10 @@ See `.env.example`. Secrets (`SUPABASE_SECRET_KEY`, `APP_SECRET`, `CRON_SECRET`,
 ## Go-live checklist
 
 - [ ] Supabase → Authentication → disable "Allow new users to sign up"
-- [ ] Create owner login, add row in `staff` (role `owner`), log in, scan 2FA QR
+- [x] Create owner login, add row in `staff` (role `owner`), log in, scan 2FA QR
 - [ ] Turnstile keys set
 - [ ] Beds24 webhook: `https://<domain>/api/beds24/webhook?key=<BEDS24_WEBHOOK_SECRET>`
-- [ ] Sync job: pg_cron calls `/api/cron/sync` every minute (see `supabase/cron.sql`)
+- [x] Sync job: pg_cron calls `/api/cron/sync` every minute (Vault secrets `ronart_cron_secret`, `ronart_vercel_bypass`)
 - [ ] NLB: implement `src/lib/payments/nlb.ts` from bank docs, set `PAYMENT_PROVIDER=nlb`
 - [ ] Real prices in Beds24, real photos, address, company name + NUI (`src/lib/site.ts`), legal texts reviewed
 - [ ] Delete test bookings (RON-FEFC51, RON-914B0F) and the empty "New Property" in Beds24
@@ -51,3 +51,8 @@ See `.env.example`. Secrets (`SUPABASE_SECRET_KEY`, `APP_SECRET`, `CRON_SECRET`,
 cp .env.example .env.local   # DEMO_DATA=1 renders the public site with sample data
 npm install && npm run dev
 ```
+
+## Live
+
+* Production: https://ronart-two.vercel.app (Vercel Authentication on until NLB is live)
+* Automated callers (Beds24 webhook, sync job) use the Vercel "Protection Bypass for Automation" secret.
