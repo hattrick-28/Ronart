@@ -22,13 +22,13 @@ export function AdminNav({ owner }: { owner: boolean }) {
   const active = (href: string) =>
     href === "/admin" ? path === "/admin" : href === "/admin/bookings" ? path.startsWith("/admin/bookings") && path !== "/admin/bookings/new" : path.startsWith(href);
   return (
-    <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible -mx-1 px-1">
+    <nav className="grid grid-cols-4 lg:flex lg:flex-col gap-1">
       {items.map((i) => (
         <Link
           key={i.href}
           href={i.href}
           aria-current={active(i.href) ? "page" : undefined}
-          className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+          className={`rounded-lg px-1.5 lg:px-3 py-2 text-[0.8rem] lg:text-sm leading-tight text-center lg:text-left font-medium transition-colors ${
             active(i.href) ? "bg-milk text-wall-deep" : "text-milk/80 hover:text-milk hover:bg-white/10"
           }`}
         >

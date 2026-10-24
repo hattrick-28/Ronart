@@ -38,8 +38,8 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     <div className="max-w-5xl">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="font-display text-3xl font-semibold text-wall-deep">Raportet</h1>
-        <form className="flex gap-2 items-end">
-          <label><span className="label">Muaji</span><input className="field" type="month" name="month" defaultValue={month} /></label>
+        <form className="grid grid-cols-2 sm:grid-cols-[12rem_auto_auto] gap-2 items-end w-full sm:w-auto">
+          <label className="col-span-2 sm:col-span-1"><span className="label">Muaji</span><input className="field" type="month" name="month" defaultValue={month} /></label>
           <button className="btn btn-ghost">Shfaq</button>
           <a className="btn btn-primary" href={`/admin/reports/export?month=${month}`} download>Shkarko Excel</a>
         </form>

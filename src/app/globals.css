@@ -31,6 +31,8 @@
 }
 
 html { -webkit-text-size-adjust: 100%; }
+/* Never allow sideways sliding on phones */
+html, body { overflow-x: clip; max-width: 100%; }
 body {
   background: var(--color-milk);
   color: var(--color-ink);
@@ -74,6 +76,13 @@ body {
 }
 .field:focus { outline: none; border-color: var(--color-wall); box-shadow: 0 0 0 3px rgba(63, 91, 71, 0.18); }
 textarea.field { height: auto; }
+.field { min-width: 0; max-width: 100%; }
+/* iOS Safari: date/month inputs ignore height and refuse to shrink unless reset */
+input.field[type="date"], input.field[type="month"], input.field[type="time"] {
+  -webkit-appearance: none; appearance: none; display: block; line-height: 1.25; text-align: left;
+}
+input.field::-webkit-date-and-time-value { text-align: left; margin: 0; }
+input.field::-webkit-calendar-picker-indicator { opacity: 0.6; }
 select.field { padding-right: 2rem; }
 .field-sm { height: 2.25rem; padding: 0.35rem 0.7rem; font-size: 0.875rem; }
 .label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--color-ink-2); margin-bottom: 0.35rem; }

@@ -18,9 +18,9 @@ export default async function GuestsPage({ searchParams }: { searchParams: Promi
     <div className="max-w-5xl">
       <Flash ok={sp.ok} err={sp.err} />
       <h1 className="font-display text-3xl font-semibold text-wall-deep">Mysafirët</h1>
-      <form className="mt-5 flex flex-wrap gap-2 items-end">
-        <label className="flex-1 min-w-56"><span className="label">Kërko</span><input className="field" name="q" defaultValue={sp.q} placeholder="Emri, telefoni ose emaili" /></label>
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="blocked" value="1" defaultChecked={sp.blocked === "1"} /> Vetëm të bllokuarit</label>
+      <form className="mt-5 grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-3 items-end">
+        <label><span className="label">Kërko</span><input className="field" name="q" defaultValue={sp.q} placeholder="Emri, telefoni ose emaili" /></label>
+        <label className="flex items-center gap-2 text-sm sm:h-[2.875rem]"><input type="checkbox" name="blocked" value="1" defaultChecked={sp.blocked === "1"} /> Vetëm të bllokuarit</label>
         <button className="btn btn-primary">Kërko</button>
       </form>
       <ul className="mt-5 rounded-[var(--radius-panel)] border border-line bg-white divide-y divide-line">
