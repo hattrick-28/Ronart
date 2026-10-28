@@ -1,0 +1,19 @@
+code,name,type,max_people,price_eur,old_beds24_room_id
+AP01,Apartamenti 1,double,2,45,748082
+AP02,Apartamenti 2,double,2,45,748083
+AP03,Apartamenti 3,double,2,45,748084
+AP04,Apartamenti 4,double,2,45,748092
+AP05,Apartamenti 5,double,2,45,748093
+AP06,Apartamenti 6,double,2,45,748094
+AP07,Apartamenti 7,double,2,45,748095
+AP08,Apartamenti 8,double,2,45,748096
+AP09,Apartamenti 9,double,2,45,748097
+AP10,Apartamenti 10,double,2,45,748098
+AP11,Apartamenti 11,double,2,45,748099
+AP12,Apartamenti 12,double,2,45,748100
+AP13,Apartamenti 13,double,2,45,748101
+SU1,Suita 1,suite,3,60,748102
+SU2,Suita 2,suite,3,60,748103
+SU3,Suita 3,suite,3,60,748104
+SU4,Suita 4,suite,3,60,748105
+SU5,Suita 5,suite,3,60,748106

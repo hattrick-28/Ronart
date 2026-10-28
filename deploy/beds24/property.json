@@ -1,0 +1,31 @@
+[
+  {
+    "name": "Ronart Apartments",
+    "propertyType": "apartment",
+    "currency": "EUR",
+    "country": "XK",
+    "checkInStart": "16:00",
+    "checkOutEnd": "10:00",
+    "bookingRules": { "bookingType": "autoConfirmed" },
+    "roomTypes": [
+      { "name": "Apartamenti 1",  "roomType": "double", "qty": 1, "maxPeople": 2, "minPrice": 45 },
+      { "name": "Apartamenti 2",  "roomType": "double", "qty": 1, "maxPeople": 2, "minPrice": 45 },
+      { "name": "Apartamenti 3",  "roomType": "double", "qty": 1, "maxPeople": 2, "minPrice": 45 },
+      { "name": "Apartamenti 4",  "roomType": "double", "qty": 1, "maxPeople": 2, "minPrice": 45 },
+      { "name": "Apartamenti 5",  "roomType": "double", "qty": 1, "maxPeople": 2, "minPrice": 45 },
+      { "name": "Apartamenti 6",  "roomType": "double", "qty": 1, "maxPeople": 2, "minPrice": 45 },
+      { "name": "Apartamenti 7",  "roomType": "double", "qty": 1, "maxPeople": 2, "minPrice": 45 },
+      { "name": "Apartamenti 8",  "roomType": "double", "qty": 1, "maxPeople": 2, "minPrice": 45 },
+      { "name": "Apartamenti 9",  "roomType": "double", "qty": 1, "maxPeople": 2, "minPrice": 45 },
+      { "name": "Apartamenti 10", "roomType": "double", "qty": 1, "maxPeople": 2, "minPrice": 45 },
+      { "name": "Apartamenti 11", "roomType": "double", "qty": 1, "maxPeople": 2, "minPrice": 45 },
+      { "name": "Apartamenti 12", "roomType": "double", "qty": 1, "maxPeople": 2, "minPrice": 45 },
+      { "name": "Apartamenti 13", "roomType": "double", "qty": 1, "maxPeople": 2, "minPrice": 45 },
+      { "name": "Suita 1", "roomType": "suite", "qty": 1, "maxPeople": 3, "minPrice": 60 },
+      { "name": "Suita 2", "roomType": "suite", "qty": 1, "maxPeople": 3, "minPrice": 60 },
+      { "name": "Suita 3", "roomType": "suite", "qty": 1, "maxPeople": 3, "minPrice": 60 },
+      { "name": "Suita 4", "roomType": "suite", "qty": 1, "maxPeople": 3, "minPrice": 60 },
+      { "name": "Suita 5", "roomType": "suite", "qty": 1, "maxPeople": 3, "minPrice": 60 }
+    ]
+  }
+]
