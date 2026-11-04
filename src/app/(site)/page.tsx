@@ -3,101 +3,159 @@ import Link from "next/link";
 import { dict, getLang, t } from "@/lib/i18n";
 import { SearchBar } from "@/components/search-bar";
 import { listUnits } from "@/lib/availability";
-import { eur } from "@/lib/format";
+import { eur, todayISO } from "@/lib/format";
 import { getSettings } from "@/lib/settings";
+import { SITE } from "@/lib/site";
+import { Arrow } from "@/components/site/arrow";
+import { RoomPins } from "@/components/site/room-pins";
 
 export default async function Home() {
   const lang = await getLang();
   const d = dict[lang];
-  const units = await listUnits();
-  const minPrice = (type: "apartment" | "suite") =>
-    Math.min(...units.filter((u) => u.type === type).map((u) => u.base_price));
-  const count = (type: "apartment" | "suite") => units.filter((u) => u.type === type).length;
-  const s = await getSettings();
+  const [units, s] = await Promise.all([listUnits(), getSettings()]);
+  const of = (type: "apartment" | "suite") => units.filter((u) => u.type === type);
+  const minPrice = (type: "apartment" | "suite") => Math.min(...of(type).map((u) => u.base_price));
+  const nApt = of("apartment").length, nSuite = of("suite").length;
+  const aptBalconies = of("apartment").filter((u) => u.has_balcony).length;
+  const size = (type: "apartment" | "suite") => of(type).find((u) => u.size_m2)?.size_m2;
+  const maxG = (type: "apartment" | "suite") => Math.max(...of(type).map((u) => u.max_guests));
+  const from = Math.min(minPrice("apartment"), minPrice("suite"));
+  const v = { pct: s.full_payment_discount_pct, days: s.free_cancellation_days, min: s.hold_minutes, time: s.check_in_time };
+
+  const types = [
+    { type: "apartment" as const, cls: "", img: "/rooms/apartment.jpg", alt: d.apt_alt, h: t(d.apts_n, { n: nApt }), p: d.apt_p, cta: d.see_apts,
+      spec: [[d.spec_size, size("apartment") ? `${size("apartment")} m²` : null], [d.spec_cap, `${maxG("apartment")} ${d.people}`], [d.spec_bed, d.spec_double], [d.spec_bal, t(d.spec_of, { a: aptBalconies, b: nApt })]] },
+    { type: "suite" as const, cls: " s-type--suite", img: "/rooms/suite.jpg", alt: d.suite_alt, h: t(d.suites_n, { n: nSuite }), p: d.suite_p, cta: d.see_suites,
+      spec: [[d.spec_size, size("suite") ? `${size("suite")} m²` : null], [d.spec_cap, `${d.up_to} ${maxG("suite")}`], [d.spec_bal, d.spec_yes]] },
+  ];
 
   return (
     <>
-      {/* The headboard wall */}
-      <section aria-label="Ronart Apartments">
-        <div className="wall-texture text-milk">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-14 pb-16 sm:pt-20 sm:pb-24 grid lg:grid-cols-[1.05fr_1fr] gap-10 items-end">
-            <div>
-              <h1 className="font-display font-semibold text-[2.4rem] leading-[1.04] sm:text-[3.6rem] max-w-[14ch]">
-                {d.hero_title}
-              </h1>
-              <p className="mt-5 text-milk/80 text-lg max-w-[42ch]">{d.hero_sub}</p>
-            </div>
-            <div className="relative z-20 hidden lg:block">
-              <Image
-                src="/rooms/suite.jpg"
-                alt={lang === "sq" ? "Suita me dritare të mëdha dhe mur të gjelbër" : "Suite with large windows and a green wall"}
-                width={1536}
-                height={1024}
-                priority
-                className="rounded-[var(--radius-panel)] shadow-[0_30px_60px_-20px_rgba(0,0,0,0.55)] ring-1 ring-black/10"
-              />
+      <section className="s-hero" aria-labelledby="h1">
+        <div className="s-hero__wall">
+          <div className="s-fanbox" aria-hidden="true">
+            <svg className="s-fan" id="s-fan" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" />
+            <div className="s-bloom" data-bloom />
+          </div>
+          <div className="s-wrap">
+            <div className="s-grid s-hero__grid">
+              <div className="s-hero__text">
+                <h1 id="h1"><span className="ln">{d.hero_h1a}</span><span className="ln">{d.hero_h1b}</span></h1>
+                <p className="s-hero__lede" data-intro>{t(d.hero_lede, { apts: nApt, suites: nSuite })}</p>
+              </div>
+              <div className="s-hero__photo">
+                <div className="s-frame" data-lamp>
+                  <Image src="/rooms/suite.jpg" alt={d.hero_alt} width={1536} height={1024} priority sizes="(min-width: 960px) 40vw, 90vw" style={{ objectPosition: "68% 50%" }} />
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div className="glow-strip relative z-10" />
-        <div className="walnut">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-7">
-            <div className="max-w-3xl"><SearchBar d={d} lang={lang} /></div>
+        <div className="s-seam" aria-hidden="true"><div className="s-seam__line" data-seam="hero" /></div>
+        <div className="s-hero__floor">
+          <div className="s-wrap">
+            <SearchBar d={d} lang={lang} today={todayISO()} />
+            <p className="s-hero__facts" data-intro>
+              <span>{d.f_checkin} <strong>{s.check_in_time}</strong></span>
+              <span>{d.f_cancel_a} <strong>{s.free_cancellation_days}</strong> {d.f_cancel_b}</span>
+              {Number.isFinite(from) && <span>{d.f_from} <strong>{eur(from)}</strong> {d.f_night}</span>}
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Two kinds of rooms */}
-      <section className="mx-auto max-w-6xl px-4 sm:px-6 pt-16 pb-16">
-        <h2 className="font-display text-3xl sm:text-4xl font-semibold text-wall-deep">{d.rooms_title}</h2>
-        <div className="mt-8 grid md:grid-cols-2 gap-8">
-          {(["suite", "apartment"] as const).map((type) => (
-            <Link key={type} href="/rooms" className="group block">
-              <div className="overflow-hidden rounded-[var(--radius-panel)] bg-milk-2">
-                <Image
-                  src={`/rooms/${type}.jpg`}
-                  alt={type === "suite" ? d.suite : d.apartment}
-                  width={1536}
-                  height={1024}
-                  sizes="(min-width: 768px) 50vw, 100vw"
-                  className="aspect-[3/2] object-cover group-hover:scale-[1.015] transition-transform duration-500"
-                />
-              </div>
-              <div className="mt-4 flex items-baseline justify-between gap-4">
-                <h3 className="font-display text-2xl font-semibold">
-                  {count(type)} {type === "suite" ? (lang === "sq" ? "suita" : "suites") : (lang === "sq" ? "apartamente" : "apartments")}
-                </h3>
-                <p className="text-ink-2 whitespace-nowrap">
-                  {d.from} <span className="font-semibold text-ink">{eur(minPrice(type))}</span> {d.per_night}
-                </p>
-              </div>
-              <p className="mt-1.5 text-ink-2 max-w-[52ch]">
-                {type === "suite"
-                  ? lang === "sq" ? "Dritare nga dyshemeja deri në tavan, ballkon, deri në 3 persona." : "Floor-to-ceiling windows, a balcony, up to 3 guests."
-                  : lang === "sq" ? "Krevat dopio, mur i gjelbër, dru arre. Për 2 persona." : "Double bed, green wall, walnut wood. For 2 guests."}
-              </p>
-            </Link>
+      <section className="s-sec on-light" aria-labelledby="h-types">
+        <div className="s-wrap">
+          <div className="s-grid s-compare__head">
+            <h2 id="h-types" data-split>{d.types_h}</h2>
+            <p className="muted" data-warm>{d.types_p}</p>
+          </div>
+          <div className="s-types">
+            {types.map((x) => (
+              <Link key={x.type} href={`/rooms#${x.type}`} className={`s-type${x.cls}`}>
+                <div className="s-frame" data-reveal>
+                  <Image src={x.img} alt={x.alt} width={1536} height={1024} sizes="(min-width: 960px) 55vw, 100vw" />
+                </div>
+                <div className="s-type__row">
+                  <h3>{x.h}</h3>
+                  {Number.isFinite(minPrice(x.type)) && <p className="s-type__price">{d.from} <b>{eur(minPrice(x.type))}</b> {d.per_night}</p>}
+                </div>
+                <p className="muted">{x.p}</p>
+                <dl className="s-spec">
+                  {x.spec.filter(([, val]) => val).map(([k, val]) => <div key={k}><dt>{k}</dt><dd>{val}</dd></div>)}
+                </dl>
+                <span className="s-type__cta">{x.cta}<Arrow /></span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="s-sec s-detail" aria-labelledby="h-detail">
+        <div className="s-wrap">
+          <div className="s-grid s-detail__head">
+            <h2 id="h-detail" data-split>{d.det_h}</h2>
+            <p data-warm>{d.det_p}</p>
+          </div>
+          <div className="s-grid">
+            <RoomPins alt={d.det_alt} items={[
+              { h: d.d1h, p: d.d1p, x: 13, y: 22 },
+              { h: d.d2h, p: d.d2p, x: 20, y: 40 },
+              { h: d.d3h, p: d.d3p, x: 36, y: 60 },
+              { h: d.d4h, p: d.d4p, x: 82, y: 66 },
+            ]} />
+          </div>
+        </div>
+      </section>
+
+      <section className="s-sec s-how" id="how" aria-labelledby="h-how">
+        <div className="s-seam s-seam--top" aria-hidden="true"><div className="s-seam__line" data-seam /></div>
+        <div className="s-wrap">
+          <h2 id="h-how" data-split>{d.how_title}</h2>
+          <div className="s-pays" data-warm>
+            <div className="s-payc s-payc--hi">
+              <span className="s-payc__k">{t(d.save_pct, v)}</span>
+              <h3>{d.how_full_t}</h3>
+              <p>{t(d.how_full_d, v)}</p>
+            </div>
+            <div className="s-payc">
+              <h3>{d.how_dep_t}</h3>
+              <p>{d.how_dep_d}</p>
+            </div>
+          </div>
+          <ol className="s-tl" id="s-tl">
+            <li className="s-tl__rail" aria-hidden="true" role="presentation"><span className="s-tl__lit" id="s-tl-lit" /></li>
+            {[[d.t1h, d.t1p], [d.t2h, d.t2p], [d.t3h, d.t3p], [d.t4h, d.t4p]].map(([h, p], i) => (
+              <li key={i} className="st"><span className="dot" aria-hidden="true">{i + 1}</span><h3>{t(h, v)}</h3><p>{t(p, v)}</p></li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="s-sec s-faqs" id="faq" aria-labelledby="h-faq">
+        <div className="s-seam s-seam--top" aria-hidden="true"><div className="s-seam__line" data-seam /></div>
+        <div className="s-wrap s-faq">
+          <h2 id="h-faq" data-split>{d.faq_h}</h2>
+          {[[d.q1, d.a1], [d.q2, d.a2], [d.q3, d.a3], [d.q4, d.a4]].map(([q, a]) => (
+            <details key={q}>
+              <summary><span>{t(q, v)}</span><span className="s-pm" aria-hidden="true" /></summary>
+              <p>{t(a, v)}</p>
+            </details>
           ))}
         </div>
       </section>
 
-      {/* How booking works: two real choices */}
-      <section id="how" className="bg-milk-2 border-y border-line">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16">
-          <h2 className="font-display text-3xl sm:text-4xl font-semibold text-wall-deep">{d.how_title}</h2>
-          <div className="mt-8 grid md:grid-cols-2 gap-5">
-            <div className="rounded-[var(--radius-panel)] bg-wall-deep text-milk p-7">
-              <p className="font-display text-xl font-semibold">{d.how_full_t}</p>
-              <p className="mt-2 text-milk/80">{t(d.how_full_d, { pct: s.full_payment_discount_pct })}</p>
-            </div>
-            <div className="rounded-[var(--radius-panel)] bg-white border border-line p-7">
-              <p className="font-display text-xl font-semibold">{d.how_dep_t}</p>
-              <p className="mt-2 text-ink-2">{d.how_dep_d}</p>
-            </div>
-          </div>
-          <div className="mt-6 grid md:grid-cols-2 gap-x-10 gap-y-2 text-ink-2 text-[0.95rem] max-w-5xl">
-            <p>{t(d.how_hold, { min: s.hold_minutes })}</p>
-            <p>{t(d.how_cancel, { days: s.free_cancellation_days })}</p>
+      <section className="s-sec s-contact" id="contact" aria-labelledby="h-contact">
+        <div className="s-seam s-seam--top" aria-hidden="true"><div className="s-seam__line" data-seam /></div>
+        <div className="s-wrap">
+          <div className="s-grid">
+            <h2 id="h-contact" data-split>{d.contact_h}</h2>
+            <dl className="s-clist" data-warm>
+              <div><dt>{d.address}</dt><dd>{SITE.address}</dd></div>
+              <div><dt>{d.phone}</dt><dd><a className="s-ilink" href={SITE.phoneHref}>{SITE.phone}</a></dd></div>
+              <div><dt>{d.email}</dt><dd><a className="s-ilink" href={`mailto:${SITE.email}`}>{SITE.email}</a></dd></div>
+              <div><dt>Instagram</dt><dd><a className="s-ilink" href="https://www.instagram.com/ronart.apartments/" rel="noopener">@ronart.apartments</a></dd></div>
+            </dl>
           </div>
         </div>
       </section>

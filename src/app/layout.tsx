@@ -10,12 +10,21 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
 };
 
-export const viewport: Viewport = { themeColor: "#22362b" };
+export const viewport: Viewport = { themeColor: "#455948" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const lang = await getLang();
   return (
-    <html lang={lang} className="h-full antialiased">
+    <html lang={lang} className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        {/* Public site intro: hide the hero for a moment so the light can switch on (never longer than 2.5 s). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "if(location.pathname==='/'&&!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.classList.add('pre');setTimeout(function(){document.documentElement.classList.remove('pre')},2500)}",
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
