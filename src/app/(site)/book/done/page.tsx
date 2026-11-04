@@ -27,23 +27,25 @@ export default async function DonePage({ searchParams }: { searchParams: Promise
   const unit = b.units as unknown as { name: string } | null;
 
   return (
-    <div className="mx-auto max-w-xl px-4 sm:px-6 py-16">
-      <div className={`h-1.5 w-16 rounded-full ${ok ? "bg-ok" : waiting ? "bg-glow" : "bg-bad"}`} />
-      <h1 className="mt-5 font-display text-4xl font-semibold text-wall-deep">
-        {ok ? d.done_ok_t : waiting ? d.done_wait_t : d.done_fail_t}
-      </h1>
-      <p className="mt-3 text-ink-2 text-lg">{ok ? d.done_ok_d : waiting ? d.done_wait_d : d.done_fail_d}</p>
-      {ok && (
-        <dl className="mt-8 rounded-[var(--radius-panel)] border border-line bg-white p-6 text-sm space-y-2.5">
-          <div className="flex justify-between"><dt className="text-ink-2">{d.booking_ref}</dt><dd className="font-semibold tracking-wide">{b.ref}</dd></div>
-          <div className="flex justify-between"><dt className="text-ink-2">{unit?.name}</dt><dd>{shortDate(b.check_in, lang)} – {shortDate(b.check_out, lang)}</dd></div>
-          <div className="flex justify-between"><dt className="text-ink-2">{d.check_in_at}</dt><dd>{s.check_in_time}</dd></div>
-          <div className="flex justify-between"><dt className="text-ink-2">{d.check_out_at}</dt><dd>{s.check_out_time}</dd></div>
-          <div className="flex justify-between border-t border-line pt-2.5"><dt className="text-ink-2">{d.paid}</dt><dd className="font-semibold">{eur(b.paid_amount)}</dd></div>
-          {rest > 0.009 && <div className="flex justify-between"><dt className="text-ink-2">{d.to_pay_arrival}</dt><dd className="font-semibold">{eur(rest)}</dd></div>}
-        </dl>
-      )}
-      <Link href={ok ? "/" : "/rooms"} className="btn btn-ghost mt-8">{ok ? d.back_home : d.search}</Link>
+    <div className="s-wrap on-light">
+      <div className="s-done">
+        <div className={`s-done__bar${ok ? " ok" : waiting ? "" : " bad"}`} />
+        <h1>{ok ? d.done_ok_t : waiting ? d.done_wait_t : d.done_fail_t}</h1>
+        <p className="muted" style={{ fontSize: 18 }}>{ok ? d.done_ok_d : waiting ? d.done_wait_d : d.done_fail_d}</p>
+        {ok && (
+          <dl>
+            <div><dt>{d.booking_ref}</dt><dd className="ref">{b.ref}</dd></div>
+            <div><dt>{unit?.name}</dt><dd>{shortDate(b.check_in, lang)} – {shortDate(b.check_out, lang)}</dd></div>
+            <div><dt>{d.check_in_at}</dt><dd>{s.check_in_time}</dd></div>
+            <div><dt>{d.check_out_at}</dt><dd>{s.check_out_time}</dd></div>
+            <div><dt>{d.paid}</dt><dd>{eur(b.paid_amount)}</dd></div>
+            {rest > 0.009 && <div><dt>{d.to_pay_arrival}</dt><dd>{eur(rest)}</dd></div>}
+          </dl>
+        )}
+        <Link href={ok ? "/" : "/rooms"} className="s-btn s-btn--ghost" style={{ marginTop: 28 }} data-fill>
+          <span className="s-btn__fill" aria-hidden="true" />{ok ? d.back_home : d.search}
+        </Link>
+      </div>
     </div>
   );
 }

@@ -14,6 +14,7 @@ declare global {
   }
 }
 
+const t = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k) => String(v[k] ?? ""));
 const eur = (n: number) => new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(n);
 
 export function BookingForm(props: {
@@ -87,70 +88,66 @@ export function BookingForm(props: {
   }
 
   const options = [
-    { id: "deposit" as const, title: d.pay_deposit, now: q.depositNow, sub: `${eur(q.depositRest)} ${d.rest_on_arrival}` },
-    { id: "full" as const, title: d.pay_full, now: q.fullNow, sub: `−${q.discountPct}%` },
+    { id: "full" as const, title: d.pay_full, now: q.fullNow, sub: t(d.full_sub, { pct: q.discountPct }), tag: t(d.save_pct, { pct: q.discountPct }) },
+    { id: "deposit" as const, title: d.pay_deposit, now: q.depositNow, sub: `${eur(q.depositRest)} ${d.rest_on_arrival}. ${d.rest_reception}`, tag: null },
   ];
   const payToday = option === "full" ? q.fullNow : q.depositNow;
 
   return (
-    <form onSubmit={submit} className="space-y-9">
+    <form onSubmit={submit} className="s-panel">
       {props.turnstileSiteKey && (
         <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" strategy="afterInteractive" onReady={renderWidget} />
       )}
-      <fieldset>
-        <legend className="font-display text-xl font-semibold mb-4">{d.your_details}</legend>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <label className="sm:col-span-2"><span className="label">{d.full_name}</span>
-            <input className="field" name="fullName" required minLength={3} maxLength={100} autoComplete="name" />
+      <fieldset className="s-fs">
+        <legend>{d.your_details}</legend>
+        <div className="s-form">
+          <label className="s-field full"><span>{d.full_name}</span>
+            <input name="fullName" required minLength={3} maxLength={100} autoComplete="name" />
           </label>
-          <label><span className="label">{d.email}</span>
-            <input className="field" name="email" type="email" required maxLength={200} autoComplete="email" />
+          <label className="s-field"><span>{d.email}</span>
+            <input name="email" type="email" required maxLength={200} autoComplete="email" />
           </label>
-          <label><span className="label">{d.phone}</span>
-            <input className="field" name="phone" type="tel" required pattern="\+?[0-9 ()\-]{6,20}" autoComplete="tel" placeholder="+383 44 000 000" />
+          <label className="s-field"><span>{d.phone}</span>
+            <input name="phone" type="tel" required pattern="\+?[0-9 ()\-]{6,20}" autoComplete="tel" placeholder="+383 44 000 000" />
           </label>
-          <label><span className="label">{d.country}</span>
-            <input className="field" name="country" maxLength={60} autoComplete="country-name" />
+          <label className="s-field"><span>{d.country}</span>
+            <input name="country" maxLength={60} autoComplete="country-name" />
           </label>
-          <label className="sm:col-span-2"><span className="label">{d.note}</span>
-            <textarea className="field min-h-24" name="note" maxLength={500} />
+          <label className="s-field full"><span>{d.note}</span>
+            <textarea name="note" maxLength={500} />
           </label>
         </div>
       </fieldset>
 
-      <fieldset>
-        <legend className="font-display text-xl font-semibold mb-4">{d.payment}</legend>
-        <div className="grid sm:grid-cols-2 gap-3" role="radiogroup">
-          {options.map((o) => {
-            const on = option === o.id;
-            return (
-              <label key={o.id} className={`cursor-pointer rounded-[var(--radius-panel)] border p-5 transition-colors ${on ? "border-wall bg-wall-soft/60 ring-1 ring-wall" : "border-line bg-white hover:border-ink-3"}`}>
-                <input type="radio" name="option" value={o.id} checked={on} onChange={() => setOption(o.id)} className="sr-only" />
-                <span className="block font-semibold">{o.title}</span>
-                <span className="block font-display text-2xl font-semibold mt-1">{eur(o.now)}</span>
-                <span className="block text-sm text-ink-3 mt-0.5">{o.sub}</span>
-              </label>
-            );
-          })}
+      <fieldset className="s-fs">
+        <legend>{d.payment}</legend>
+        <div className="s-pay">
+          {options.map((o) => (
+            <label key={o.id} className="s-opt">
+              <input type="radio" name="option" value={o.id} checked={option === o.id} onChange={() => setOption(o.id)} />
+              <strong>{o.title}</strong>
+              <span className="amt">{eur(o.now)}</span>
+              <span className="small muted">{o.sub}</span>
+            </label>
+          ))}
         </div>
       </fieldset>
 
-      <div className="space-y-4">
-        <label className="flex gap-3 items-start text-sm">
-          <input type="checkbox" name="terms" required className="mt-0.5 size-4 accent-[var(--color-wall)]" />
-          <span>
-            {d.accept_terms}{" "}
-            <a href="/cancellation" target="_blank" className="underline">{d.footer_cancel}</a>
-          </span>
-        </label>
-        <div ref={widget} />
-        {error && <p role="alert" className="rounded-[var(--radius-field)] bg-bad-soft text-bad px-4 py-3 text-sm">{error}</p>}
-        <div className="flex flex-wrap items-center gap-4">
-          <button className="btn btn-primary text-base px-6" disabled={busy}>
-            {busy ? "…" : `${d.pay_now} · ${eur(payToday)}`}
-          </button>
-          <p className="text-xs text-ink-3 max-w-[40ch]">{d.secure_note}</p>
-        </div>
+      <label className="s-check">
+        <input type="checkbox" name="terms" required />
+        <span>
+          {d.accept_terms}{" "}
+          <a href="/cancellation" target="_blank">{d.footer_cancel}</a>
+        </span>
+      </label>
+      <div ref={widget} style={{ marginTop: 16 }} />
+      {error && <p role="alert" className="s-err">{error}</p>}
+      <div className="s-submit">
+        <button className="s-btn s-btn--dark" disabled={busy} data-fill>
+          <span className="s-btn__fill" aria-hidden="true" />
+          {busy ? "…" : `${d.pay_now} · ${eur(payToday)}`}
+        </button>
+        <p>{d.secure_note}</p>
       </div>
     </form>
   );

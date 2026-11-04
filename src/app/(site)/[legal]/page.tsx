@@ -82,12 +82,12 @@ export default async function LegalPage({ params }: { params: Promise<{ legal: s
   };
   const page = content[legal as Page];
   return (
-    <article className="mx-auto max-w-2xl px-4 sm:px-6 py-14">
-      <h1 className="font-display text-4xl font-semibold text-wall-deep">{page.title}</h1>
-      <div className="mt-6 space-y-4 text-[1.02rem] leading-relaxed text-ink-2">
+    <article className="s-wrap on-light"><div className="s-legal">
+      <h1>{page.title}</h1>
+      <div>
         {page.body.map((p) => <p key={p}>{p}</p>)}
       </div>
-      <p className="mt-10 text-xs text-ink-3">{sq ? "Draft. Duhet rishikuar nga pronari para publikimit." : "Draft. To be reviewed by the owner before launch."}</p>
-    </article>
+      <p className="small muted" style={{ marginTop: 40 }}>{sq ? "Draft. Duhet rishikuar nga pronari para publikimit." : "Draft. To be reviewed by the owner before launch."}</p>
+    </div></article>
   );
 }

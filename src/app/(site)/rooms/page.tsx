@@ -1,11 +1,10 @@
-import Image from "next/image";
-import Link from "next/link";
 import type { Metadata } from "next";
-import { dict, getLang } from "@/lib/i18n";
+import { dict, getLang, t } from "@/lib/i18n";
 import { SearchBar } from "@/components/search-bar";
 import { listUnits, searchAvailability, type UnitAvailability, type Unit } from "@/lib/availability";
 import { nightsBetween } from "@/lib/pricing";
-import { eur, shortDate, todayISO } from "@/lib/format";
+import { todayISO } from "@/lib/format";
+import { RoomBoard, type BoardGroup } from "@/components/site/room-board";
 
 export const metadata: Metadata = { title: "Dhomat" };
 
@@ -30,88 +29,61 @@ export default async function RoomsPage({ searchParams }: { searchParams: Promis
     } catch (e) {
       console.error(e);
       loadError = true;
+      units = await listUnits();
     }
   } else {
     units = await listUnits();
   }
 
-  const groups = (["suite", "apartment"] as const).map((type) => ({
-    type,
-    items: (results ?? units.map((u) => ({ ...u, available: true, stayPrice: u.base_price }))).filter((u) => u.type === type),
-  }));
-  const anyFree = results?.some((r) => r.available);
+  const source = results ?? units.map((u) => ({ ...u, available: false, stayPrice: u.base_price }));
+  const nightsLabel = `${nights} ${nights === 1 ? d.night : d.nights}`;
+  const freeCount = results ? results.filter((r) => r.available).length : 0;
+
+  const groups: BoardGroup[] = (["suite", "apartment"] as const).map((type) => {
+    const items = source.filter((u) => u.type === type);
+    const size = items.find((u) => u.size_m2)?.size_m2;
+    const maxG = items.length ? Math.max(...items.map((u) => u.max_guests)) : 0;
+    const from = items.length ? Math.min(...items.map((u) => u.base_price)) : 0;
+    const freeHere = results ? items.filter((u) => u.available).length : null;
+    const spec: [string, string][] = [];
+    if (size) spec.push([d.spec_size, `${size} m²`]);
+    spec.push([d.spec_cap, `${d.up_to} ${maxG}`]);
+    spec.push([d.from, `${new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(from)} ${d.per_night}`]);
+    if (freeHere !== null) spec.push([d.available, t(d.free_of, { a: freeHere, b: items.length })]);
+    return {
+      type,
+      title: type === "suite" ? (lang === "sq" ? "Suitat" : "Suites") : (lang === "sq" ? "Apartamentet" : "Apartments"),
+      desc: (lang === "sq" ? items[0]?.description_sq : items[0]?.description_en) ?? null,
+      img: `/rooms/${type}.jpg`,
+      spec,
+      units: items.map((u) => ({
+        id: u.id, code: u.code, name: u.name, type: u.type, max_guests: u.max_guests, size_m2: u.size_m2,
+        has_balcony: u.has_balcony, available: u.available, price: results ? u.stayPrice : u.base_price,
+      })),
+    };
+  });
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
-      <h1 className="font-display text-4xl font-semibold text-wall-deep">{d.rooms_title}</h1>
-      <div className="mt-6 rounded-[var(--radius-panel)] bg-white border border-line p-4 sm:p-5">
-        <SearchBar d={d} lang={lang} checkIn={checkIn} checkOut={checkOut} guests={guests} tone="plain" />
+    <div className="s-wrap on-light">
+      <div className="s-rv__head">
+        <h1>{d.rooms_h}</h1>
+        <p className="muted">{d.rooms_p}</p>
       </div>
-
-      {!validDates && <p className="mt-6 text-ink-2">{d.choose_dates}</p>}
+      <SearchBar d={d} lang={lang} today={todayISO()} checkIn={checkIn} checkOut={checkOut} guests={guests} variant="plain" />
+      {!validDates && <p className="s-qsum">{d.choose_dates}</p>}
+      {results && freeCount > 0 && (
+        <p className="s-qsum" aria-live="polite"><strong>{freeCount}</strong> {t(d.rooms_free, { n: "", nights: nightsLabel }).trim()}</p>
+      )}
       {loadError && (
-        <p className="mt-6 rounded-[var(--radius-field)] bg-warn-soft text-warn px-4 py-3">
+        <p className="s-note s-note--warn">
           {lang === "sq"
             ? "Nuk mund të kontrollojmë disponueshmërinë tani. Provo përsëri pas pak ose na telefono."
             : "We can't check availability right now. Try again shortly or call us."}
         </p>
       )}
-      {results && !anyFree && <p className="mt-6 rounded-[var(--radius-field)] bg-plum-soft text-plum px-4 py-3">{d.no_rooms}</p>}
-
-      {groups.map(({ type, items }) => (
-        <section key={type} className="mt-12">
-          <div className="flex items-end gap-6">
-            <Image src={`/rooms/${type}.jpg`} alt="" width={240} height={160} className="hidden sm:block w-40 rounded-xl object-cover aspect-[3/2]" />
-            <div>
-              <h2 className="font-display text-2xl font-semibold">{type === "suite" ? (lang === "sq" ? "Suitat" : "Suites") : (lang === "sq" ? "Apartamentet" : "Apartments")}</h2>
-              <p className="text-ink-2 mt-1 max-w-[60ch]">{lang === "sq" ? items[0]?.description_sq : items[0]?.description_en}</p>
-            </div>
-          </div>
-          <ul className="mt-5 divide-y divide-line border-y border-line">
-            {items
-              .slice()
-              .sort((a, b) => Number(b.available) - Number(a.available))
-              .map((u) => (
-                <li key={u.id} className={`py-4 grid grid-cols-[1fr_auto] sm:grid-cols-[1.2fr_1fr_auto] gap-x-6 gap-y-1 items-center ${u.available ? "" : "opacity-55"}`}>
-                  <div>
-                    <p className="font-semibold">{u.name}</p>
-                    <p className="text-sm text-ink-3">
-                      {d.up_to} {u.max_guests} {d.people}
-                      {u.size_m2 ? `, ${u.size_m2} m²` : ""}
-                      {u.has_balcony ? `, ${d.balcony.toLowerCase()}` : ""}
-                    </p>
-                  </div>
-                  <div className="text-sm sm:text-base row-start-2 sm:row-start-auto">
-                    {results ? (
-                      u.available ? (
-                        <span>
-                          <span className="font-semibold">{eur(u.stayPrice)}</span>{" "}
-                          <span className="text-ink-3">{d.total_for.toLowerCase()} {nights} {nights === 1 ? d.night : d.nights}</span>
-                        </span>
-                      ) : (
-                        <span className="text-ink-3">{d.unavailable}</span>
-                      )
-                    ) : (
-                      <span><span className="font-semibold">{eur(u.base_price)}</span> <span className="text-ink-3">{d.per_night}</span></span>
-                    )}
-                  </div>
-                  <div className="row-span-2 sm:row-span-1 justify-self-end">
-                    {results && u.available ? (
-                      <Link className="btn btn-primary btn-sm" href={`/book?unit=${u.id}&in=${checkIn}&out=${checkOut}&guests=${guests}`}>
-                        {d.choose}
-                      </Link>
-                    ) : null}
-                  </div>
-                </li>
-              ))}
-          </ul>
-        </section>
-      ))}
-      {validDates && (
-        <p className="mt-8 text-sm text-ink-3">
-          {shortDate(checkIn!, lang)} – {shortDate(checkOut!, lang)}
-        </p>
-      )}
+      {results && freeCount === 0 && <p className="s-note s-note--bad">{d.no_rooms}</p>}
+      <RoomBoard d={d} groups={groups} guests={guests} nightsLabel={nightsLabel}
+        search={results ? { in: checkIn!, out: checkOut!, guests } : null} />
     </div>
   );
 }
