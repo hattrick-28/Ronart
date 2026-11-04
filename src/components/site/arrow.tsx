@@ -19,9 +19,5 @@ export function Fill() {
 }
 
 export function Wordmark() {
-  return (
-    <>
-      R<span className="s-o">o</span>nart
-    </>
-  );
+  return <>Ronart</>;
 }

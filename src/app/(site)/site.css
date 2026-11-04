@@ -34,8 +34,6 @@ html.lenis, html.lenis body { height: auto; }
 .s-hdr.is-hidden .s-hdr__in { translate: 0 -140%; }
 .s-logo { display: inline-flex; flex-direction: column; line-height: 1; }
 .s-logo__word { font-weight: 750; font-size: 24px; letter-spacing: -.04em; }
-.s-o { position: relative; }
-.s-o::before { content: ""; position: absolute; left: 50%; top: -.06em; width: .17em; height: .17em; border-radius: 50%; background: currentColor; translate: -50% 0; }
 .s-logo__sub { font-size: 10.5px; letter-spacing: .02em; opacity: .8; margin-top: 2px; }
 .s-nav { display: flex; gap: 26px; margin: 0; padding: 0; list-style: none; font-size: 15px; font-weight: 500; }
 .s-draw { padding: 6px 0; background: linear-gradient(var(--glow) 0 0) left bottom / 0% 2px no-repeat; transition: background-size .45s var(--ease); }
@@ -226,8 +224,7 @@ html.lenis, html.lenis body { height: auto; }
 
 /* footer */
 .s-foot { background: var(--wood-deep); color: var(--on-dark); padding: 0 0 28px; overflow: clip; }
-.s-foot__word { font-weight: 760; letter-spacing: -.06em; line-height: .78; font-size: clamp(5rem, 29.5vw, 33rem); margin: 0 0 0 -.04em; padding-top: calc(.22em + 40px); white-space: nowrap; color: var(--linen); }
-.s-foot__word .s-o::before { top: .1em; }
+.s-foot__word { font-weight: 760; letter-spacing: -.06em; line-height: .78; font-size: clamp(5rem, 29.5vw, 33rem); margin: 0 0 0 -.04em; padding-top: 60px; white-space: nowrap; color: var(--linen); }
 .s-foot__row { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 14px; color: var(--on-dark-muted); margin-top: 34px; align-items: center; }
 .s-foot__row nav { display: flex; gap: 22px; flex-wrap: wrap; }
 .s-foot__row a { display: inline-block; padding: 4px 0; }
